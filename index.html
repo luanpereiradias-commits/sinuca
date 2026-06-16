@@ -46,6 +46,7 @@
             border-radius: 8px;
             font-size: 13px;
             text-align: center;
+            line-height: 1.4;
         }
         #win-message {
             position: absolute;
@@ -53,11 +54,12 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: #0f0;
-            font-size: 48px;
+            font-size: 52px;
             font-weight: bold;
-            text-shadow: 0 0 15px #0f0;
+            text-shadow: 0 0 20px #0f0;
             pointer-events: none;
             display: none;
+            z-index: 10;
         }
     </style>
 </head>
@@ -69,8 +71,8 @@
             Bolas restantes: <span id="balls-left">7</span>
         </div>
         <div id="instructions">
-            Clique e arraste da bola branca • Solte para tacar<br>
-            Pressione <strong>R</strong> para reiniciar manualmente
+            Clique + arraste na branca para tacar<br>
+            <strong>R</strong> = Reiniciar • <strong>C</strong> = Matar todas as bolas
         </div>
         <div id="win-message">🎉 VOCÊ VENCEU!</div>
     </div>
@@ -187,6 +189,17 @@
             });
         }
 
+        function sinkAllBalls() {
+            balls.forEach(ball => {
+                if (ball.number !== 0) { // não afunda a branca
+                    ball.sunk = true;
+                    ball.vx = ball.vy = 0;
+                }
+            });
+            sunkBalls = 7;
+            document.getElementById('balls-left').textContent = '0';
+        }
+
         function drawTable() {
             ctx.fillStyle = '#0b4d0b';
             ctx.fillRect(BORDER, BORDER, TABLE_WIDTH - BORDER*2, TABLE_HEIGHT - BORDER*2);
@@ -289,14 +302,12 @@
 
         function checkWin() {
             if (gameWon || sunkBalls < 7) return;
-            
             gameWon = true;
             winMessage.style.display = 'block';
 
-            // Reinicia automaticamente após 3 segundos
             setTimeout(() => {
                 createBalls();
-            }, 3000);
+            }, 2800);
         }
 
         function gameLoop() {
@@ -320,7 +331,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Controles do mouse
+        // Controles
         canvas.addEventListener('mousedown', e => {
             if (gameWon || !cueBall || !allBallsStopped()) return;
             const rect = canvas.getBoundingClientRect();
@@ -349,18 +360,18 @@
 
             const dx = cueBall.x - mx;
             const dy = cueBall.y - my;
-            const force = Math.min(Math.hypot(dx, dy) / 4, 38);
 
-            cueBall.vx = dx * 0.12;
-            cueBall.vy = dy * 0.12;
+            cueBall.vx = dx * 0.13;
+            cueBall.vy = dy * 0.13;
             isAiming = false;
         });
 
         document.addEventListener('keydown', e => {
             if (e.key.toLowerCase() === 'r') createBalls();
+            if (e.key.toLowerCase() === 'c') sinkAllBalls();
         });
 
-        // Iniciar o jogo
+        // Iniciar
         createBalls();
         gameLoop();
     </script>
