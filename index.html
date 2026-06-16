@@ -47,6 +47,18 @@
             font-size: 13px;
             text-align: center;
         }
+        #win-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0f0;
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 0 0 15px #0f0;
+            pointer-events: none;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -57,14 +69,16 @@
             Bolas restantes: <span id="balls-left">7</span>
         </div>
         <div id="instructions">
-            Clique e arraste da bola branca para mirar • Solte para tacar<br>
-            Pressione <strong>R</strong> para reiniciar
+            Clique e arraste da bola branca • Solte para tacar<br>
+            Pressione <strong>R</strong> para reiniciar manualmente
         </div>
+        <div id="win-message">🎉 VOCÊ VENCEU!</div>
     </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const winMessage = document.getElementById('win-message');
         
         const TABLE_WIDTH = 900;
         const TABLE_HEIGHT = 500;
@@ -79,6 +93,7 @@
         let aimStartX = 0;
         let aimStartY = 0;
         let sunkBalls = 0;
+        let gameWon = false;
 
         const pockets = [
             {x: BORDER, y: BORDER},
@@ -139,7 +154,6 @@
                 if (Math.abs(this.vx) < 0.1) this.vx = 0;
                 if (Math.abs(this.vy) < 0.1) this.vy = 0;
 
-                // Paredes
                 if (this.x - this.radius < BORDER) { this.x = BORDER + this.radius; this.vx = -this.vx * 0.9; }
                 if (this.x + this.radius > TABLE_WIDTH - BORDER) { this.x = TABLE_WIDTH - BORDER - this.radius; this.vx = -this.vx * 0.9; }
                 if (this.y - this.radius < BORDER) { this.y = BORDER + this.radius; this.vy = -this.vy * 0.9; }
@@ -150,13 +164,13 @@
         function createBalls() {
             balls = [];
             sunkBalls = 0;
+            gameWon = false;
+            winMessage.style.display = 'none';
             document.getElementById('balls-left').textContent = '7';
 
-            // Bola branca
             cueBall = new Ball(250, TABLE_HEIGHT/2, 0);
             balls.push(cueBall);
 
-            // 7 bolas coloridas em formação triangular
             const startX = 620;
             const startY = TABLE_HEIGHT/2 - 20;
             const positions = [
@@ -169,8 +183,7 @@
             positions.forEach((pos, i) => {
                 const x = startX + pos.x * (BALL_RADIUS * 2.1);
                 const y = startY + pos.y * (BALL_RADIUS * 2.05);
-                const ball = new Ball(x, y, i+1);
-                balls.push(ball);
+                balls.push(new Ball(x, y, i+1));
             });
         }
 
@@ -241,15 +254,6 @@
                         ball.vx = ball.vy = 0;
                         sunkBalls++;
                         document.getElementById('balls-left').textContent = (7 - sunkBalls);
-
-                        if (ball.number === 0) { // Bola branca caiu
-                            setTimeout(() => {
-                                ball.x = 250;
-                                ball.y = TABLE_HEIGHT/2;
-                                ball.vx = ball.vy = 0;
-                                ball.sunk = false;
-                            }, 600);
-                        }
                         break;
                     }
                 }
@@ -275,13 +279,24 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Taco
             ctx.strokeStyle = '#8B4513';
             ctx.lineWidth = 8;
             ctx.beginPath();
             ctx.moveTo(cueBall.x - dx*0.1, cueBall.y - dy*0.1);
             ctx.lineTo(cueBall.x - dx*1.8, cueBall.y - dy*1.8);
             ctx.stroke();
+        }
+
+        function checkWin() {
+            if (gameWon || sunkBalls < 7) return;
+            
+            gameWon = true;
+            winMessage.style.display = 'block';
+
+            // Reinicia automaticamente após 3 segundos
+            setTimeout(() => {
+                createBalls();
+            }, 3000);
         }
 
         function gameLoop() {
@@ -298,21 +313,16 @@
 
             if (isAiming) drawAimLine();
 
-            if (allBallsStopped() && sunkBalls >= 7) {
-                ctx.fillStyle = 'rgba(0,0,0,0.8)';
-                ctx.fillRect(0, 0, TABLE_WIDTH, TABLE_HEIGHT);
-                ctx.fillStyle = '#0f0';
-                ctx.font = 'bold 50px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('🎉 VOCÊ VENCEU!', TABLE_WIDTH/2, TABLE_HEIGHT/2);
+            if (allBallsStopped()) {
+                checkWin();
             }
 
             requestAnimationFrame(gameLoop);
         }
 
-        // Controles
+        // Controles do mouse
         canvas.addEventListener('mousedown', e => {
-            if (!cueBall || !allBallsStopped()) return;
+            if (gameWon || !cueBall || !allBallsStopped()) return;
             const rect = canvas.getBoundingClientRect();
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
@@ -332,7 +342,7 @@
         });
 
         canvas.addEventListener('mouseup', e => {
-            if (!isAiming || !cueBall) return;
+            if (!isAiming || !cueBall || gameWon) return;
             const rect = canvas.getBoundingClientRect();
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
@@ -350,7 +360,7 @@
             if (e.key.toLowerCase() === 'r') createBalls();
         });
 
-        // Iniciar
+        // Iniciar o jogo
         createBalls();
         gameLoop();
     </script>
