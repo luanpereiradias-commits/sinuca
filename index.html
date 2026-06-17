@@ -68,7 +68,7 @@
         <canvas id="canvas" width="900" height="500"></canvas>
         <div id="info">
             <strong>Sinuca 8 Bolas</strong><br>
-            Bolas restantes: <span id="balls-left">7</span>
+            Bolas restantes: <span id="balls-left">8</span>
         </div>
         <div id="instructions">
             Clique + arraste na branca para tacar<br>
@@ -81,7 +81,7 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const winMessage = document.getElementById('win-message');
-        
+       
         const TABLE_WIDTH = 900;
         const TABLE_HEIGHT = 500;
         const BORDER = 40;
@@ -106,7 +106,7 @@
             {x: TABLE_WIDTH - BORDER, y: TABLE_HEIGHT - BORDER}
         ];
 
-        const ballColors = ['#fff','#f00','#00f','#f60','#800080','#ff0','#008000','#800000'];
+        const ballColors = ['#fff','#f00','#00f','#f60','#800080','#ff0','#008000','#800000', '#111'];
 
         class Ball {
             constructor(x, y, number) {
@@ -116,37 +116,37 @@
                 this.vy = 0;
                 this.number = number;
                 this.radius = BALL_RADIUS;
-                this.color = ballColors[number];
+                this.color = ballColors[number] || '#111';
                 this.sunk = false;
             }
-            
+           
             draw() {
                 if (this.sunk) return;
                 ctx.shadowColor = 'rgba(0,0,0,0.6)';
                 ctx.shadowBlur = 8;
                 ctx.shadowOffsetX = 3;
                 ctx.shadowOffsetY = 3;
-                
+               
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
                 ctx.fill();
-                
+               
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = 'rgba(255,255,255,0.4)';
                 ctx.beginPath();
                 ctx.arc(this.x - 5, this.y - 5, 6, 0, Math.PI * 2);
                 ctx.fill();
-                
+               
                 if (this.number > 0) {
-                    ctx.fillStyle = '#fff';
+                    ctx.fillStyle = this.number === 8 ? '#fff' : '#000';
                     ctx.font = 'bold 13px Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(this.number, this.x, this.y + 1);
                 }
             }
-            
+           
             update() {
                 if (this.sunk) return;
                 this.x += this.vx;
@@ -168,7 +168,7 @@
             sunkBalls = 0;
             gameWon = false;
             winMessage.style.display = 'none';
-            document.getElementById('balls-left').textContent = '7';
+            document.getElementById('balls-left').textContent = '8';
 
             cueBall = new Ball(250, TABLE_HEIGHT/2, 0);
             balls.push(cueBall);
@@ -176,45 +176,45 @@
             const startX = 620;
             const startY = TABLE_HEIGHT/2 - 20;
             const positions = [
-                {x: 0, y: 0},
-                {x: 1, y: -1}, {x: 1, y: 1},
-                {x: 2, y: -2}, {x: 2, y: 0}, {x: 2, y: 2},
-                {x: 3, y: -1}, {x: 3, y: 1}
+                {x: 0, y: 0, num: 1},
+                {x: 1, y: -1, num: 2}, {x: 1, y: 1, num: 3},
+                {x: 2, y: -2, num: 4}, {x: 2, y: 0, num: 8}, {x: 2, y: 2, num: 5},
+                {x: 3, y: -1, num: 6}, {x: 3, y: 1, num: 7}
             ];
 
-            positions.forEach((pos, i) => {
+            positions.forEach((pos) => {
                 const x = startX + pos.x * (BALL_RADIUS * 2.1);
                 const y = startY + pos.y * (BALL_RADIUS * 2.05);
-                balls.push(new Ball(x, y, i+1));
+                balls.push(new Ball(x, y, pos.num));
             });
         }
 
         function sinkAllBalls() {
             balls.forEach(ball => {
-                if (ball.number !== 0) { // não afunda a branca
+                if (ball.number !== 0) {
                     ball.sunk = true;
                     ball.vx = ball.vy = 0;
                 }
             });
-            sunkBalls = 7;
+            sunkBalls = 8;
             document.getElementById('balls-left').textContent = '0';
         }
 
+        // O resto do código permanece igual (drawTable, checkCollisions, checkPockets, etc.)
         function drawTable() {
             ctx.fillStyle = '#0b4d0b';
             ctx.fillRect(BORDER, BORDER, TABLE_WIDTH - BORDER*2, TABLE_HEIGHT - BORDER*2);
-            
+           
             ctx.strokeStyle = '#8B4513';
             ctx.lineWidth = 25;
             ctx.strokeRect(BORDER/2, BORDER/2, TABLE_WIDTH - BORDER, TABLE_HEIGHT - BORDER);
-            
+           
             ctx.strokeStyle = '#ddd';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(TABLE_WIDTH/2, BORDER);
             ctx.lineTo(TABLE_WIDTH/2, TABLE_HEIGHT - BORDER);
             ctx.stroke();
-
             ctx.fillStyle = '#111';
             pockets.forEach(p => {
                 ctx.beginPath();
@@ -229,25 +229,20 @@
                     const b1 = balls[i];
                     const b2 = balls[j];
                     if (b1.sunk || b2.sunk) continue;
-
                     const dx = b2.x - b1.x;
                     const dy = b2.y - b1.y;
                     const dist = Math.hypot(dx, dy);
-
                     if (dist < b1.radius + b2.radius && dist > 0) {
                         const angle = Math.atan2(dy, dx);
                         const sin = Math.sin(angle), cos = Math.cos(angle);
-
                         const vx1 = b1.vx * cos + b1.vy * sin;
                         const vy1 = b1.vy * cos - b1.vx * sin;
                         const vx2 = b2.vx * cos + b2.vy * sin;
                         const vy2 = b2.vy * cos - b2.vx * sin;
-
                         b1.vx = vx2 * cos - vy1 * sin;
                         b1.vy = vy1 * cos + vx2 * sin;
                         b2.vx = vx1 * cos - vy2 * sin;
                         b2.vy = vy2 * cos + vx1 * sin;
-
                         const overlap = (b1.radius + b2.radius - dist) / 2;
                         b1.x -= dx/dist * overlap;
                         b1.y -= dy/dist * overlap;
@@ -266,7 +261,7 @@
                         ball.sunk = true;
                         ball.vx = ball.vy = 0;
                         sunkBalls++;
-                        document.getElementById('balls-left').textContent = (7 - sunkBalls);
+                        document.getElementById('balls-left').textContent = (8 - sunkBalls);
                         break;
                     }
                 }
@@ -282,7 +277,6 @@
             const dx = cueBall.x - aimStartX;
             const dy = cueBall.y - aimStartY;
             const power = Math.min(Math.hypot(dx, dy) / 3, 80);
-
             ctx.strokeStyle = 'rgba(255,255,255,0.7)';
             ctx.lineWidth = 4;
             ctx.setLineDash([10, 8]);
@@ -291,7 +285,6 @@
             ctx.lineTo(cueBall.x + dx * (power/12), cueBall.y + dy * (power/12));
             ctx.stroke();
             ctx.setLineDash([]);
-
             ctx.strokeStyle = '#8B4513';
             ctx.lineWidth = 8;
             ctx.beginPath();
@@ -301,10 +294,9 @@
         }
 
         function checkWin() {
-            if (gameWon || sunkBalls < 7) return;
+            if (gameWon || sunkBalls < 8) return;
             gameWon = true;
             winMessage.style.display = 'block';
-
             setTimeout(() => {
                 createBalls();
             }, 2800);
@@ -313,31 +305,25 @@
         function gameLoop() {
             ctx.clearRect(0, 0, TABLE_WIDTH, TABLE_HEIGHT);
             drawTable();
-
             balls.forEach(ball => {
                 ball.update();
                 ball.draw();
             });
-
             checkCollisions();
             checkPockets();
-
             if (isAiming) drawAimLine();
-
             if (allBallsStopped()) {
                 checkWin();
             }
-
             requestAnimationFrame(gameLoop);
         }
 
-        // Controles
+        // Controles (mesmo do original)
         canvas.addEventListener('mousedown', e => {
             if (gameWon || !cueBall || !allBallsStopped()) return;
             const rect = canvas.getBoundingClientRect();
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
-
             if (Math.hypot(mx - cueBall.x, my - cueBall.y) < 50) {
                 isAiming = true;
                 aimStartX = mx;
@@ -357,10 +343,8 @@
             const rect = canvas.getBoundingClientRect();
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
-
             const dx = cueBall.x - mx;
             const dy = cueBall.y - my;
-
             cueBall.vx = dx * 0.13;
             cueBall.vy = dy * 0.13;
             isAiming = false;
