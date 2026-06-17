@@ -72,7 +72,7 @@
         </div>
         <div id="instructions">
             Clique + arraste na branca para tacar<br>
-            <strong>R</strong> = Reiniciar • <strong>C</strong> = Matar todas as bolas
+            <strong>R</strong> = Reiniciar • <strong>C</strong> = Matar uma bola • <strong>X</strong> = Matar todas
         </div>
         <div id="win-message">🎉 VOCÊ VENCEU!</div>
     </div>
@@ -189,6 +189,19 @@
             });
         }
 
+        function sinkOneBall() {
+            // Procura a primeira bola não afundada (exceto a branca)
+            for (let ball of balls) {
+                if (ball.number !== 0 && !ball.sunk) {
+                    ball.sunk = true;
+                    ball.vx = ball.vy = 0;
+                    sunkBalls++;
+                    document.getElementById('balls-left').textContent = (8 - sunkBalls);
+                    return;
+                }
+            }
+        }
+
         function sinkAllBalls() {
             balls.forEach(ball => {
                 if (ball.number !== 0) {
@@ -200,7 +213,6 @@
             document.getElementById('balls-left').textContent = '0';
         }
 
-        // O resto do código permanece igual (drawTable, checkCollisions, checkPockets, etc.)
         function drawTable() {
             ctx.fillStyle = '#0b4d0b';
             ctx.fillRect(BORDER, BORDER, TABLE_WIDTH - BORDER*2, TABLE_HEIGHT - BORDER*2);
@@ -223,7 +235,7 @@
             });
         }
 
-        function checkCollisions() {
+        function checkCollisions() { /* mesmo código anterior */ 
             for (let i = 0; i < balls.length; i++) {
                 for (let j = i + 1; j < balls.length; j++) {
                     const b1 = balls[i];
@@ -276,20 +288,67 @@
             if (!isAiming || !cueBall) return;
             const dx = cueBall.x - aimStartX;
             const dy = cueBall.y - aimStartY;
-            const power = Math.min(Math.hypot(dx, dy) / 3, 80);
-            ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-            ctx.lineWidth = 4;
-            ctx.setLineDash([10, 8]);
+            const distance = Math.hypot(dx, dy);
+            const power = Math.min(distance / 3, 90);
+
+            const angle = Math.atan2(dy, dx);
+            const dirX = Math.cos(angle);
+            const dirY = Math.sin(angle);
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([12, 18]);
             ctx.beginPath();
             ctx.moveTo(cueBall.x, cueBall.y);
-            ctx.lineTo(cueBall.x + dx * (power/12), cueBall.y + dy * (power/12));
+            ctx.lineTo(cueBall.x + dirX * 800, cueBall.y + dirY * 800);
             ctx.stroke();
             ctx.setLineDash([]);
-            ctx.strokeStyle = '#8B4513';
-            ctx.lineWidth = 8;
+
+            ctx.fillStyle = 'rgba(255, 255, 100, 0.9)';
+            for (let i = 1; i < 12; i++) {
+                const x = cueBall.x + dirX * (35 + i * 45);
+                const y = cueBall.y + dirY * (35 + i * 45);
+                ctx.beginPath();
+                ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // Taco
+            const cueLength = 160;
+            const cueStartX = cueBall.x - dirX * 22;
+            const cueStartY = cueBall.y - dirY * 22;
+            const cueEndX = cueStartX - dirX * cueLength * (power / 90 + 0.6);
+            const cueEndY = cueStartY - dirY * cueLength * (power / 90 + 0.6);
+
+            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+            ctx.lineWidth = 11;
             ctx.beginPath();
-            ctx.moveTo(cueBall.x - dx*0.1, cueBall.y - dy*0.1);
-            ctx.lineTo(cueBall.x - dx*1.8, cueBall.y - dy*1.8);
+            ctx.moveTo(cueStartX + 3, cueStartY + 3);
+            ctx.lineTo(cueEndX + 3, cueEndY + 3);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#5c4033';
+            ctx.lineWidth = 9;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(cueStartX, cueStartY);
+            ctx.lineTo(cueEndX, cueEndY);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#8b5a2b';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(cueStartX, cueStartY);
+            ctx.lineTo(cueEndX, cueEndY);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.moveTo(cueStartX, cueStartY);
+            ctx.lineTo(cueStartX - dirX * 28, cueStartY - dirY * 28);
             ctx.stroke();
         }
 
@@ -297,9 +356,7 @@
             if (gameWon || sunkBalls < 8) return;
             gameWon = true;
             winMessage.style.display = 'block';
-            setTimeout(() => {
-                createBalls();
-            }, 2800);
+            setTimeout(() => createBalls(), 2800);
         }
 
         function gameLoop() {
@@ -312,14 +369,12 @@
             checkCollisions();
             checkPockets();
             if (isAiming) drawAimLine();
-            if (allBallsStopped()) {
-                checkWin();
-            }
+            if (allBallsStopped()) checkWin();
             requestAnimationFrame(gameLoop);
         }
 
-        // Controles (mesmo do original)
-        canvas.addEventListener('mousedown', e => {
+        // Controles
+        canvas.addEventListener('mousedown', e => { /* mesmo código */ 
             if (gameWon || !cueBall || !allBallsStopped()) return;
             const rect = canvas.getBoundingClientRect();
             const mx = e.clientX - rect.left;
@@ -338,7 +393,7 @@
             aimStartY = e.clientY - rect.top;
         });
 
-        canvas.addEventListener('mouseup', e => {
+        canvas.addEventListener('mouseup', e => { /* mesmo código */ 
             if (!isAiming || !cueBall || gameWon) return;
             const rect = canvas.getBoundingClientRect();
             const mx = e.clientX - rect.left;
@@ -352,7 +407,8 @@
 
         document.addEventListener('keydown', e => {
             if (e.key.toLowerCase() === 'r') createBalls();
-            if (e.key.toLowerCase() === 'c') sinkAllBalls();
+            if (e.key.toLowerCase() === 'c') sinkOneBall();     // ← Nova função: uma bola por vez
+            if (e.key.toLowerCase() === 'x') sinkAllBalls();    // Todas as bolas
         });
 
         // Iniciar
