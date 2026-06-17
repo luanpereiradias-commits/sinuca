@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sinuca 8 Bolas - 2 Jogadores</title>
+    <title>Sinuca 8 Bolas</title>
     <style>
         body {
             margin: 0;
@@ -22,6 +22,7 @@
             border: 14px solid #3c2a1f;
             border-radius: 18px;
             box-shadow: 0 0 50px rgba(0,0,0,0.95);
+            background: #000;
         }
         canvas {
             display: block;
@@ -30,39 +31,29 @@
         }
         #info {
             position: absolute;
-            top: 15px;
-            left: 15px;
+            top: 18px;
+            left: 18px;
             color: #fff;
-            background: rgba(0,0,0,0.8);
-            padding: 12px 18px;
+            background: rgba(0,0,0,0.75);
+            padding: 12px 20px;
             border-radius: 10px;
-            font-size: 15px;
+            font-size: 15.5px;
             z-index: 10;
-            min-width: 220px;
-        }
-        #turn-info {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            color: #fff;
-            background: rgba(0,0,0,0.8);
-            padding: 12px 18px;
-            border-radius: 10px;
-            font-size: 15px;
-            z-index: 10;
-            text-align: center;
+            user-select: none;
         }
         #instructions {
             position: absolute;
-            bottom: 15px;
+            bottom: 18px;
             left: 50%;
             transform: translateX(-50%);
             color: #ccc;
             background: rgba(0,0,0,0.8);
             padding: 9px 24px;
             border-radius: 10px;
-            font-size: 13.5px;
+            font-size: 13.8px;
+            text-align: center;
             z-index: 10;
+            user-select: none;
         }
         #win-message {
             position: absolute;
@@ -70,51 +61,33 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: #0f0;
-            font-size: 52px;
+            font-size: 62px;
             font-weight: bold;
             text-shadow: 0 0 30px #0f0;
             pointer-events: none;
             display: none;
             z-index: 30;
-            text-align: center;
-        }
-        button {
-            margin-top: 10px;
-            padding: 8px 16px;
-            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div id="game-container">
         <canvas id="canvas" width="900" height="500"></canvas>
-        
         <div id="info">
             <strong>Sinuca 8 Bolas</strong><br>
-            Bolas restantes: <span id="balls-left">7</span>
+            Bolas restantes: <span id="balls-left">8</span>
         </div>
-        
-        <div id="turn-info">
-            <span id="current-player">Jogador 1</span><br>
-            <span id="player-group" style="font-size:14px"></span>
-        </div>
-
         <div id="instructions">
             Arraste a bola branca para tacar<br>
             <strong>R</strong> Reiniciar • <strong>C</strong> Afundar 1 • <strong>X</strong> Afundar todas
         </div>
-        
-        <div id="win-message">
-            <div id="winner-text"></div>
-            <button onclick="createBalls()">Jogar Novamente</button>
-        </div>
+        <div id="win-message">🎉 VOCÊ VENCEU!</div>
     </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const winMessage = document.getElementById('win-message');
-        const winnerText = document.getElementById('winner-text');
 
         const TABLE_WIDTH = 900;
         const TABLE_HEIGHT = 500;
@@ -128,11 +101,7 @@
         let isAiming = false;
         let aimStartX = 0, aimStartY = 0;
         let sunkBalls = 0;
-        let currentPlayer = 1;
-        let player1Group = null; // 'low' ou 'high'
-        let player2Group = null;
         let gameWon = false;
-        let foul = false;
 
         const pockets = [
             {x: BORDER, y: BORDER}, {x: TABLE_WIDTH/2, y: BORDER}, {x: TABLE_WIDTH - BORDER, y: BORDER},
@@ -144,23 +113,27 @@
 
         class Ball {
             constructor(x, y, number) {
-                this.x = x; this.y = y;
-                this.vx = 0; this.vy = 0;
+                this.x = x;
+                this.y = y;
+                this.vx = 0;
+                this.vy = 0;
                 this.number = number;
                 this.radius = BALL_RADIUS;
                 this.color = ballColors[number] || '#111';
                 this.sunk = false;
             }
-            // ... (mesmo update e draw das versões anteriores)
+
             update() {
                 if (this.sunk) return;
                 this.x += this.vx;
                 this.y += this.vy;
                 this.vx *= FRICTION;
                 this.vy *= FRICTION;
+
                 if (Math.abs(this.vx) < 0.1) this.vx = 0;
                 if (Math.abs(this.vy) < 0.1) this.vy = 0;
 
+                // Paredes
                 if (this.x - this.radius < BORDER) { this.x = BORDER + this.radius; this.vx = -this.vx * 0.85; }
                 if (this.x + this.radius > TABLE_WIDTH - BORDER) { this.x = TABLE_WIDTH - BORDER - this.radius; this.vx = -this.vx * 0.85; }
                 if (this.y - this.radius < BORDER) { this.y = BORDER + this.radius; this.vy = -this.vy * 0.85; }
@@ -169,6 +142,9 @@
 
             draw() {
                 if (this.sunk) return;
+
+                const speed = Math.hypot(this.vx, this.vy);
+
                 ctx.shadowColor = 'rgba(0,0,0,0.8)';
                 ctx.shadowBlur = 12;
                 ctx.shadowOffsetX = 4;
@@ -179,8 +155,9 @@
                 ctx.fillStyle = this.color;
                 ctx.fill();
 
+                // Brilho dinâmico
                 ctx.shadowBlur = 0;
-                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.fillStyle = `rgba(255,255,255,${0.35 + speed * 0.02})`;
                 ctx.beginPath();
                 ctx.arc(this.x - 5.5, this.y - 5.5, 7, 0, Math.PI * 2);
                 ctx.fill();
@@ -199,14 +176,8 @@
             balls = [];
             sunkBalls = 0;
             gameWon = false;
-            player1Group = null;
-            player2Group = null;
-            currentPlayer = 1;
-            foul = false;
             winMessage.style.display = 'none';
-
-            document.getElementById('balls-left').textContent = '7';
-            updateTurnInfo();
+            document.getElementById('balls-left').textContent = '8';
 
             cueBall = new Ball(235, TABLE_HEIGHT/2, 0);
             balls.push(cueBall);
@@ -214,7 +185,8 @@
             const startX = 635;
             const startY = TABLE_HEIGHT/2 - 22;
             const positions = [
-                {x:0, y:0, num:1}, {x:1, y:-1, num:2}, {x:1, y:1, num:3},
+                {x:0, y:0, num:1},
+                {x:1, y:-1, num:2}, {x:1, y:1, num:3},
                 {x:2, y:-2, num:4}, {x:2, y:0, num:8}, {x:2, y:2, num:5},
                 {x:3, y:-1, num:6}, {x:3, y:1, num:7}
             ];
@@ -226,57 +198,6 @@
             });
         }
 
-        function updateTurnInfo() {
-            const playerEl = document.getElementById('current-player');
-            const groupEl = document.getElementById('player-group');
-            
-            playerEl.textContent = `Jogador ${currentPlayer}`;
-            playerEl.style.color = currentPlayer === 1 ? '#ffeb3b' : '#4fc3f7';
-
-            if (player1Group) {
-                const groupName = currentPlayer === 1 ? 
-                    (player1Group === 'low' ? 'Sólidas (1-4)' : 'Listadas (5-7)') :
-                    (player2Group === 'low' ? 'Sólidas (1-4)' : 'Listadas (5-7)');
-                groupEl.textContent = groupName;
-            } else {
-                groupEl.textContent = "Atribuição após primeira bola";
-            }
-        }
-
-        function switchPlayer() {
-            currentPlayer = currentPlayer === 1 ? 2 : 1;
-            updateTurnInfo();
-        }
-
-        function isValidBall(ball) {
-            if (!player1Group) return true; // Ainda não definido
-            const group = currentPlayer === 1 ? player1Group : player2Group;
-            if (ball.number === 8) return true;
-            return group === 'low' ? ball.number <= 4 : ball.number >= 5;
-        }
-
-        function checkWin() {
-            if (gameWon) return;
-            
-            let playerBallsLeft = 0;
-            balls.forEach(b => {
-                if (!b.sunk && b.number !== 0 && b.number !== 8) {
-                    if (isValidBall(b)) playerBallsLeft++;
-                }
-            });
-
-            // Verifica se o jogador atual afundou a 8
-            const eightBall = balls.find(b => b.number === 8);
-            if (eightBall && eightBall.sunk && playerBallsLeft === 0) {
-                gameWon = true;
-                winnerText.innerHTML = `🎉 JOGADOR ${currentPlayer} VENCEU!`;
-                winMessage.style.display = 'block';
-            }
-        }
-
-        // ==================== RESTANTE DO CÓDIGO (desenho, física, controles) ====================
-        // ... (Mantive o mesmo padrão das versões anteriores, só adicionei lógica de 2 jogadores)
-
         function respawnCueBall() {
             if (cueBall) {
                 cueBall.x = 235;
@@ -286,8 +207,81 @@
             }
         }
 
+        // ==================== ÁUDIO ====================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playHitSound(volume = 0.6) {
+            const oscillator = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(180, audioCtx.currentTime);
+            gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            oscillator.connect(gain).connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.35);
+        }
+
+        // ==================== DESENHO ====================
+        function drawTable() {
+            ctx.fillStyle = '#0b4d0b';
+            ctx.fillRect(BORDER, BORDER, TABLE_WIDTH - BORDER*2, TABLE_HEIGHT - BORDER*2);
+
+            ctx.strokeStyle = '#3c2a1f';
+            ctx.lineWidth = 32;
+            ctx.strokeRect(BORDER/2, BORDER/2, TABLE_WIDTH - BORDER, TABLE_HEIGHT - BORDER);
+
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(TABLE_WIDTH/2, BORDER + 10);
+            ctx.lineTo(TABLE_WIDTH/2, TABLE_HEIGHT - BORDER - 10);
+            ctx.stroke();
+
+            ctx.fillStyle = '#0a0a0a';
+            pockets.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function checkCollisions() {
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    const b1 = balls[i];
+                    const b2 = balls[j];
+                    if (b1.sunk || b2.sunk) continue;
+
+                    const dx = b2.x - b1.x;
+                    const dy = b2.y - b1.y;
+                    const dist = Math.hypot(dx, dy);
+
+                    if (dist < b1.radius + b2.radius && dist > 0) {
+                        playHitSound(Math.min(1, Math.hypot(b1.vx, b1.vy) / 12));
+
+                        const angle = Math.atan2(dy, dx);
+                        const sin = Math.sin(angle), cos = Math.cos(angle);
+
+                        const v1 = b1.vx * cos + b1.vy * sin;
+                        const v2 = b2.vx * cos + b2.vy * sin;
+
+                        b1.vx = (v2 * cos - v1 * sin);
+                        b1.vy = (v1 * cos + v2 * sin);
+                        b2.vx = (v1 * cos - v2 * sin);
+                        b2.vy = (v2 * cos + v1 * sin);
+
+                        const overlap = (b1.radius + b2.radius - dist) / 2;
+                        b1.x -= dx / dist * overlap;
+                        b1.y -= dy / dist * overlap;
+                        b2.x += dx / dist * overlap;
+                        b2.y += dy / dist * overlap;
+                    }
+                }
+            }
+        }
+
         function checkPockets() {
-            let sunkThisTurn = false;
             for (let ball of balls) {
                 if (ball.sunk) continue;
                 for (let p of pockets) {
@@ -296,36 +290,61 @@
                         ball.vx = ball.vy = 0;
 
                         if (ball.number === 0) {
-                            foul = true;
                             respawnCueBall();
                         } else {
-                            sunkThisTurn = true;
-                            if (ball.number !== 8) sunkBalls++;
-                            document.getElementById('balls-left').textContent = 7 - sunkBalls;
-
-                            // Atribui grupos na primeira bola afundada
-                            if (!player1Group && ball.number !== 8) {
-                                player1Group = ball.number <= 4 ? 'low' : 'high';
-                                player2Group = player1Group === 'low' ? 'high' : 'low';
-                                updateTurnInfo();
-                            }
+                            sunkBalls++;
+                            document.getElementById('balls-left').textContent = 8 - sunkBalls;
                         }
+                        playHitSound(0.8);
                         break;
                     }
                 }
             }
-
-            if (foul) {
-                switchPlayer();
-                foul = false;
-            } else if (!sunkThisTurn || !isValidBall(balls.find(b => !b.sunk && b.number !== 0))) {
-                switchPlayer();
-            }
-
-            checkWin();
         }
 
-        // (O resto do código - drawTable, checkCollisions, drawAimLine, gameLoop, controles - permanece similar)
+        function allBallsStopped() {
+            return balls.every(b => b.sunk || (Math.abs(b.vx) < 0.12 && Math.abs(b.vy) < 0.12));
+        }
+
+        function drawAimLine() {
+            if (!isAiming || !cueBall || cueBall.sunk) return;
+
+            const dx = cueBall.x - aimStartX;
+            const dy = cueBall.y - aimStartY;
+            const dist = Math.hypot(dx, dy);
+            const power = Math.min(dist / 3.5, 100);
+
+            const angle = Math.atan2(dy, dx);
+            const dirX = Math.cos(angle);
+            const dirY = Math.sin(angle);
+
+            // Linha de mira
+            ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([8, 20]);
+            ctx.beginPath();
+            ctx.moveTo(cueBall.x, cueBall.y);
+            ctx.lineTo(cueBall.x + dirX * 950, cueBall.y + dirY * 950);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Pontos
+            ctx.fillStyle = '#ffeb3b';
+            for (let i = 1; i < 14; i++) {
+                const x = cueBall.x + dirX * (40 + i * 52);
+                const y = cueBall.y + dirY * (40 + i * 52);
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function checkWin() {
+            if (gameWon || sunkBalls < 8) return;
+            gameWon = true;
+            winMessage.style.display = 'block';
+            setTimeout(createBalls, 3200);
+        }
 
         function gameLoop() {
             ctx.clearRect(0, 0, TABLE_WIDTH, TABLE_HEIGHT);
@@ -346,15 +365,97 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Controles (mouse + touch) permanecem iguais às versões anteriores
+        // ==================== CONTROLES ====================
+        function startAim(x, y) {
+            if (gameWon || !cueBall || !allBallsStopped() || cueBall.sunk) return;
+            isAiming = true;
+            aimStartX = x;
+            aimStartY = y;
+        }
 
-        document.addEventListener('keydown', e => {
-            if (e.key.toLowerCase() === 'r') createBalls();
-            if (e.key.toLowerCase() === 'c') sinkOneBall();
-            if (e.key.toLowerCase() === 'x') sinkAllBalls();
+        function shoot(x, y) {
+            if (!isAiming || !cueBall) return;
+            const dx = cueBall.x - x;
+            const dy = cueBall.y - y;
+            const power = Math.min(Math.hypot(dx, dy) * 0.135, 19);
+
+            cueBall.vx = dx * 0.135;
+            cueBall.vy = dy * 0.135;
+            isAiming = false;
+        }
+
+        // Mouse
+        canvas.addEventListener('mousedown', e => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            startAim(x, y);
         });
 
-        // Inicializar
+        canvas.addEventListener('mousemove', e => {
+            if (!isAiming) return;
+            const rect = canvas.getBoundingClientRect();
+            aimStartX = e.clientX - rect.left;
+            aimStartY = e.clientY - rect.top;
+        });
+
+        canvas.addEventListener('mouseup', e => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            shoot(x, y);
+        });
+
+        // Touch
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            startAim(x, y);
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', e => {
+            if (!isAiming) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            aimStartX = touch.clientX - rect.left;
+            aimStartY = touch.clientY - rect.top;
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', e => {
+            e.preventDefault();
+            if (!isAiming) return;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.changedTouches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            shoot(x, y);
+        }, { passive: false });
+
+        // Teclado
+        document.addEventListener('keydown', e => {
+            if (e.key.toLowerCase() === 'r') createBalls();
+            if (e.key.toLowerCase() === 'c') {
+                for (let ball of balls) {
+                    if (ball.number !== 0 && !ball.sunk) {
+                        ball.sunk = true;
+                        sunkBalls++;
+                        document.getElementById('balls-left').textContent = 8 - sunkBalls;
+                        return;
+                    }
+                }
+            }
+            if (e.key.toLowerCase() === 'x') {
+                balls.forEach(b => { if (b.number !== 0) b.sunk = true; });
+                sunkBalls = 8;
+                document.getElementById('balls-left').textContent = '0';
+            }
+        });
+
+        // Iniciar
         createBalls();
         gameLoop();
     </script>
