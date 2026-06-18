@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sinuca 8 Bolas</title>
+    <title>Sinuca 8 Bolas - 2 Jogadores</title>
     <style>
         body {
             margin: 0;
@@ -19,38 +19,45 @@
         }
         #game-container {
             position: relative;
-            border: 14px solid #3c2a1f;
-            border-radius: 18px;
-            box-shadow: 0 0 50px rgba(0,0,0,0.95);
+            border: 16px solid #3c2a1f;
+            border-radius: 20px;
+            box-shadow: 0 0 60px rgba(0,0,0,0.95);
             background: #000;
+            overflow: hidden;
         }
         canvas {
             display: block;
             background: #0b4d0b;
-            border-radius: 4px;
+            border-radius: 6px;
         }
         #info {
             position: absolute;
             top: 18px;
             left: 18px;
             color: #fff;
-            background: rgba(0,0,0,0.75);
+            background: rgba(0,0,0,0.85);
             padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 15.5px;
+            border-radius: 12px;
+            font-size: 16px;
             z-index: 10;
             user-select: none;
+            backdrop-filter: blur(4px);
+        }
+        #current-player {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 6px;
         }
         #instructions {
             position: absolute;
             bottom: 18px;
             left: 50%;
             transform: translateX(-50%);
-            color: #ccc;
-            background: rgba(0,0,0,0.8);
-            padding: 9px 24px;
-            border-radius: 10px;
-            font-size: 13.8px;
+            color: #ddd;
+            background: rgba(0,0,0,0.85);
+            padding: 10px 26px;
+            border-radius: 12px;
+            font-size: 14px;
             text-align: center;
             z-index: 10;
             user-select: none;
@@ -63,10 +70,16 @@
             color: #0f0;
             font-size: 62px;
             font-weight: bold;
-            text-shadow: 0 0 30px #0f0;
+            text-shadow: 0 0 40px #0f0;
             pointer-events: none;
             display: none;
             z-index: 30;
+            animation: winPop 0.6s ease;
+        }
+        @keyframes winPop {
+            0% { transform: translate(-50%, -50%) scale(0.6); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
         }
     </style>
 </head>
@@ -75,13 +88,13 @@
         <canvas id="canvas" width="900" height="500"></canvas>
         <div id="info">
             <strong>Sinuca 8 Bolas</strong><br>
-            Bolas restantes: <span id="balls-left">8</span>
+            Bolas restantes: <span id="balls-left">8</span><br>
+            <span id="current-player">Jogador 1</span>
         </div>
         <div id="instructions">
-            Arraste a bola branca para tacar<br>
-            <strong>R</strong> Reiniciar • <strong>C</strong> Afundar 1 • <strong>X</strong> Afundar todas
+            Arraste da bola branca • <strong>R</strong> Reiniciar
         </div>
-        <div id="win-message">🎉 VOCÊ VENCEU!</div>
+        <div id="win-message"></div>
     </div>
 
     <script>
@@ -92,15 +105,16 @@
         const TABLE_WIDTH = 900;
         const TABLE_HEIGHT = 500;
         const BORDER = 40;
-        const POCKET_RADIUS = 19;
+        const POCKET_RADIUS = 20;
         const BALL_RADIUS = 14;
-        const FRICTION = 0.978;
+        const FRICTION = 0.982;
 
         let balls = [];
         let cueBall = null;
         let isAiming = false;
         let aimStartX = 0, aimStartY = 0;
         let sunkBalls = 0;
+        let currentPlayer = 1;
         let gameWon = false;
 
         const pockets = [
@@ -130,41 +144,38 @@
                 this.vx *= FRICTION;
                 this.vy *= FRICTION;
 
-                if (Math.abs(this.vx) < 0.1) this.vx = 0;
-                if (Math.abs(this.vy) < 0.1) this.vy = 0;
+                if (Math.abs(this.vx) < 0.08) this.vx = 0;
+                if (Math.abs(this.vy) < 0.08) this.vy = 0;
 
-                // Paredes
-                if (this.x - this.radius < BORDER) { this.x = BORDER + this.radius; this.vx = -this.vx * 0.85; }
-                if (this.x + this.radius > TABLE_WIDTH - BORDER) { this.x = TABLE_WIDTH - BORDER - this.radius; this.vx = -this.vx * 0.85; }
-                if (this.y - this.radius < BORDER) { this.y = BORDER + this.radius; this.vy = -this.vy * 0.85; }
-                if (this.y + this.radius > TABLE_HEIGHT - BORDER) { this.y = TABLE_HEIGHT - BORDER - this.radius; this.vy = -this.vy * 0.85; }
+                if (this.x - this.radius < BORDER) { this.x = BORDER + this.radius; this.vx = -this.vx * 0.88; }
+                if (this.x + this.radius > TABLE_WIDTH - BORDER) { this.x = TABLE_WIDTH - BORDER - this.radius; this.vx = -this.vx * 0.88; }
+                if (this.y - this.radius < BORDER) { this.y = BORDER + this.radius; this.vy = -this.vy * 0.88; }
+                if (this.y + this.radius > TABLE_HEIGHT - BORDER) { this.y = TABLE_HEIGHT - BORDER - this.radius; this.vy = -this.vy * 0.88; }
             }
 
             draw() {
                 if (this.sunk) return;
-
                 const speed = Math.hypot(this.vx, this.vy);
 
-                ctx.shadowColor = 'rgba(0,0,0,0.8)';
-                ctx.shadowBlur = 12;
-                ctx.shadowOffsetX = 4;
-                ctx.shadowOffsetY = 5;
+                ctx.shadowColor = 'rgba(0,0,0,0.9)';
+                ctx.shadowBlur = 14;
+                ctx.shadowOffsetX = 5;
+                ctx.shadowOffsetY = 6;
 
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
                 ctx.fill();
 
-                // Brilho dinâmico
                 ctx.shadowBlur = 0;
-                ctx.fillStyle = `rgba(255,255,255,${0.35 + speed * 0.02})`;
+                ctx.fillStyle = `rgba(255,255,255,${0.45 + speed * 0.025})`;
                 ctx.beginPath();
-                ctx.arc(this.x - 5.5, this.y - 5.5, 7, 0, Math.PI * 2);
+                ctx.arc(this.x - 6, this.y - 6, 7.5, 0, Math.PI * 2);
                 ctx.fill();
 
                 if (this.number > 0) {
                     ctx.fillStyle = this.number === 8 ? '#fff' : '#000';
-                    ctx.font = 'bold 14px Arial';
+                    ctx.font = 'bold 13.5px Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(this.number, this.x, this.y + 1);
@@ -175,9 +186,10 @@
         function createBalls() {
             balls = [];
             sunkBalls = 0;
+            currentPlayer = 1;
             gameWon = false;
             winMessage.style.display = 'none';
-            document.getElementById('balls-left').textContent = '8';
+            updateUI();
 
             cueBall = new Ball(235, TABLE_HEIGHT/2, 0);
             balls.push(cueBall);
@@ -185,8 +197,7 @@
             const startX = 635;
             const startY = TABLE_HEIGHT/2 - 22;
             const positions = [
-                {x:0, y:0, num:1},
-                {x:1, y:-1, num:2}, {x:1, y:1, num:3},
+                {x:0, y:0, num:1}, {x:1, y:-1, num:2}, {x:1, y:1, num:3},
                 {x:2, y:-2, num:4}, {x:2, y:0, num:8}, {x:2, y:2, num:5},
                 {x:3, y:-1, num:6}, {x:3, y:1, num:7}
             ];
@@ -198,6 +209,13 @@
             });
         }
 
+        function updateUI() {
+            document.getElementById('balls-left').textContent = 8 - sunkBalls;
+            const playerEl = document.getElementById('current-player');
+            playerEl.textContent = `Jogador ${currentPlayer}`;
+            playerEl.style.color = currentPlayer === 1 ? '#4fc3f7' : '#ff9800';
+        }
+
         function respawnCueBall() {
             if (cueBall) {
                 cueBall.x = 235;
@@ -207,38 +225,36 @@
             }
         }
 
-        // ==================== ÁUDIO ====================
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        function playHitSound(volume = 0.6) {
-            const oscillator = audioCtx.createOscillator();
+        function playHitSound(volume = 0.7, freq = 180) {
+            const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            oscillator.type = 'triangle';
-            oscillator.frequency.setValueAtTime(180, audioCtx.currentTime);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
             gain.gain.setValueAtTime(volume, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-            oscillator.connect(gain).connect(audioCtx.destination);
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.35);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.4);
         }
 
-        // ==================== DESENHO ====================
         function drawTable() {
             ctx.fillStyle = '#0b4d0b';
             ctx.fillRect(BORDER, BORDER, TABLE_WIDTH - BORDER*2, TABLE_HEIGHT - BORDER*2);
 
             ctx.strokeStyle = '#3c2a1f';
-            ctx.lineWidth = 32;
+            ctx.lineWidth = 36;
             ctx.strokeRect(BORDER/2, BORDER/2, TABLE_WIDTH - BORDER, TABLE_HEIGHT - BORDER);
 
             ctx.strokeStyle = '#ddd';
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(TABLE_WIDTH/2, BORDER + 10);
-            ctx.lineTo(TABLE_WIDTH/2, TABLE_HEIGHT - BORDER - 10);
+            ctx.moveTo(TABLE_WIDTH/2, BORDER + 12);
+            ctx.lineTo(TABLE_WIDTH/2, TABLE_HEIGHT - BORDER - 12);
             ctx.stroke();
 
-            ctx.fillStyle = '#0a0a0a';
+            ctx.fillStyle = '#111';
             pockets.forEach(p => {
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2);
@@ -246,7 +262,7 @@
             });
         }
 
-        function checkCollisions() {
+        function checkCollisions() { /* mesmo código anterior */ 
             for (let i = 0; i < balls.length; i++) {
                 for (let j = i + 1; j < balls.length; j++) {
                     const b1 = balls[i];
@@ -258,7 +274,8 @@
                     const dist = Math.hypot(dx, dy);
 
                     if (dist < b1.radius + b2.radius && dist > 0) {
-                        playHitSound(Math.min(1, Math.hypot(b1.vx, b1.vy) / 12));
+                        const speed = Math.hypot(b1.vx, b1.vy) + Math.hypot(b2.vx, b2.vy);
+                        playHitSound(Math.min(1, speed / 18), 140 + speed * 4);
 
                         const angle = Math.atan2(dy, dx);
                         const sin = Math.sin(angle), cos = Math.cos(angle);
@@ -266,10 +283,10 @@
                         const v1 = b1.vx * cos + b1.vy * sin;
                         const v2 = b2.vx * cos + b2.vy * sin;
 
-                        b1.vx = (v2 * cos - v1 * sin);
-                        b1.vy = (v1 * cos + v2 * sin);
-                        b2.vx = (v1 * cos - v2 * sin);
-                        b2.vy = (v2 * cos + v1 * sin);
+                        b1.vx = (v2 * cos - v1 * sin) * 0.98;
+                        b1.vy = (v1 * cos + v2 * sin) * 0.98;
+                        b2.vx = (v1 * cos - v2 * sin) * 0.98;
+                        b2.vy = (v2 * cos + v1 * sin) * 0.98;
 
                         const overlap = (b1.radius + b2.radius - dist) / 2;
                         b1.x -= dx / dist * overlap;
@@ -282,10 +299,11 @@
         }
 
         function checkPockets() {
+            let sunkThisTurn = 0;
             for (let ball of balls) {
                 if (ball.sunk) continue;
                 for (let p of pockets) {
-                    if (Math.hypot(ball.x - p.x, ball.y - p.y) < POCKET_RADIUS + BALL_RADIUS - 5) {
+                    if (Math.hypot(ball.x - p.x, ball.y - p.y) < POCKET_RADIUS + BALL_RADIUS - 6) {
                         ball.sunk = true;
                         ball.vx = ball.vy = 0;
 
@@ -293,57 +311,73 @@
                             respawnCueBall();
                         } else {
                             sunkBalls++;
+                            sunkThisTurn++;
                             document.getElementById('balls-left').textContent = 8 - sunkBalls;
                         }
-                        playHitSound(0.8);
+                        playHitSound(0.85, 80);
                         break;
                     }
                 }
             }
+            return sunkThisTurn;
         }
 
         function allBallsStopped() {
-            return balls.every(b => b.sunk || (Math.abs(b.vx) < 0.12 && Math.abs(b.vy) < 0.12));
+            return balls.every(b => b.sunk || (Math.abs(b.vx) < 0.1 && Math.abs(b.vy) < 0.1));
         }
 
-        function drawAimLine() {
+        function drawCueStick() {
             if (!isAiming || !cueBall || cueBall.sunk) return;
 
             const dx = cueBall.x - aimStartX;
             const dy = cueBall.y - aimStartY;
             const dist = Math.hypot(dx, dy);
-            const power = Math.min(dist / 3.5, 100);
+            const power = Math.min(dist / 4.2, 100);
 
             const angle = Math.atan2(dy, dx);
             const dirX = Math.cos(angle);
             const dirY = Math.sin(angle);
 
-            // Linha de mira
-            ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-            ctx.lineWidth = 2.5;
-            ctx.setLineDash([8, 20]);
+            ctx.strokeStyle = '#d2b48c';
+            ctx.lineWidth = 7;
+            ctx.lineCap = 'round';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'rgba(0,0,0,0.7)';
+            ctx.beginPath();
+            ctx.moveTo(cueBall.x - dirX * 25, cueBall.y - dirY * 25);
+            ctx.lineTo(cueBall.x - dirX * (70 + power * 1.8), cueBall.y - dirY * (70 + power * 1.8));
+            ctx.stroke();
+
+            ctx.strokeStyle = `rgba(255, 255, 100, ${0.75 - power/200})`;
+            ctx.lineWidth = 2.2;
+            ctx.setLineDash([6, 18]);
             ctx.beginPath();
             ctx.moveTo(cueBall.x, cueBall.y);
-            ctx.lineTo(cueBall.x + dirX * 950, cueBall.y + dirY * 950);
+            ctx.lineTo(cueBall.x + dirX * 920, cueBall.y + dirY * 920);
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Pontos
-            ctx.fillStyle = '#ffeb3b';
-            for (let i = 1; i < 14; i++) {
-                const x = cueBall.x + dirX * (40 + i * 52);
-                const y = cueBall.y + dirY * (40 + i * 52);
-                ctx.beginPath();
-                ctx.arc(x, y, 3, 0, Math.PI * 2);
-                ctx.fill();
-            }
+            ctx.fillStyle = power > 65 ? '#f33' : '#ffeb3b';
+            ctx.fillRect(cueBall.x - 18, cueBall.y - 45, 36, 6);
+            ctx.fillStyle = '#222';
+            ctx.fillRect(cueBall.x - 18, cueBall.y - 45, 36 * (power / 100), 6);
+        }
+
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            updateUI();
         }
 
         function checkWin() {
-            if (gameWon || sunkBalls < 8) return;
-            gameWon = true;
-            winMessage.style.display = 'block';
-            setTimeout(createBalls, 3200);
+            if (gameWon) return;
+            const eightBall = balls.find(b => b.number === 8);
+            if (eightBall && eightBall.sunk) {
+                gameWon = true;
+                winMessage.style.color = currentPlayer === 1 ? '#4fc3f7' : '#ff9800';
+                winMessage.innerHTML = `🎉 JOGADOR ${currentPlayer} VENCEU!`;
+                winMessage.style.display = 'block';
+                setTimeout(() => createBalls(), 3500);
+            }
         }
 
         function gameLoop() {
@@ -356,16 +390,21 @@
             });
 
             checkCollisions();
-            checkPockets();
+            const sunkThisTurn = checkPockets();
 
-            if (isAiming) drawAimLine();
+            if (isAiming) drawCueStick();
 
-            if (allBallsStopped()) checkWin();
+            if (allBallsStopped() && !gameWon) {
+                if (sunkThisTurn === 0) {
+                    switchPlayer();
+                }
+                checkWin();
+            }
 
             requestAnimationFrame(gameLoop);
         }
 
-        // ==================== CONTROLES ====================
+        // Controles (mesmo de antes)
         function startAim(x, y) {
             if (gameWon || !cueBall || !allBallsStopped() || cueBall.sunk) return;
             isAiming = true;
@@ -377,82 +416,47 @@
             if (!isAiming || !cueBall) return;
             const dx = cueBall.x - x;
             const dy = cueBall.y - y;
-            const power = Math.min(Math.hypot(dx, dy) * 0.135, 19);
+            const power = Math.min(Math.hypot(dx, dy) * 0.138, 21);
 
-            cueBall.vx = dx * 0.135;
-            cueBall.vy = dy * 0.135;
+            cueBall.vx = dx * 0.138;
+            cueBall.vy = dy * 0.138;
             isAiming = false;
         }
 
-        // Mouse
-        canvas.addEventListener('mousedown', e => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            startAim(x, y);
+        // Eventos Mouse + Touch
+        ['mousedown', 'touchstart'].forEach(ev => {
+            canvas.addEventListener(ev, e => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                startAim(x, y);
+            }, { passive: false });
         });
 
-        canvas.addEventListener('mousemove', e => {
-            if (!isAiming) return;
-            const rect = canvas.getBoundingClientRect();
-            aimStartX = e.clientX - rect.left;
-            aimStartY = e.clientY - rect.top;
+        ['mousemove', 'touchmove'].forEach(ev => {
+            canvas.addEventListener(ev, e => {
+                if (!isAiming) return;
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                aimStartX = (e.clientX || e.touches[0].clientX) - rect.left;
+                aimStartY = (e.clientY || e.touches[0].clientY) - rect.top;
+            }, { passive: false });
         });
 
-        canvas.addEventListener('mouseup', e => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            shoot(x, y);
+        ['mouseup', 'touchend'].forEach(ev => {
+            canvas.addEventListener(ev, e => {
+                e.preventDefault();
+                if (!isAiming) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || e.changedTouches[0].clientX) - rect.left;
+                const y = (e.clientY || e.changedTouches[0].clientY) - rect.top;
+                shoot(x, y);
+            }, { passive: false });
         });
 
-        // Touch
-        canvas.addEventListener('touchstart', e => {
-            e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            startAim(x, y);
-        }, { passive: false });
-
-        canvas.addEventListener('touchmove', e => {
-            if (!isAiming) return;
-            e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            aimStartX = touch.clientX - rect.left;
-            aimStartY = touch.clientY - rect.top;
-        }, { passive: false });
-
-        canvas.addEventListener('touchend', e => {
-            e.preventDefault();
-            if (!isAiming) return;
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.changedTouches[0];
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            shoot(x, y);
-        }, { passive: false });
-
-        // Teclado
         document.addEventListener('keydown', e => {
             if (e.key.toLowerCase() === 'r') createBalls();
-            if (e.key.toLowerCase() === 'c') {
-                for (let ball of balls) {
-                    if (ball.number !== 0 && !ball.sunk) {
-                        ball.sunk = true;
-                        sunkBalls++;
-                        document.getElementById('balls-left').textContent = 8 - sunkBalls;
-                        return;
-                    }
-                }
-            }
-            if (e.key.toLowerCase() === 'x') {
-                balls.forEach(b => { if (b.number !== 0) b.sunk = true; });
-                sunkBalls = 8;
-                document.getElementById('balls-left').textContent = '0';
-            }
         });
 
         // Iniciar
@@ -460,4 +464,4 @@
         gameLoop();
     </script>
 </body>
-</html>  
+</html>
