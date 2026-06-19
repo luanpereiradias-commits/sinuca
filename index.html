@@ -25,25 +25,55 @@
             background: #000;
             overflow: hidden;
         }
-        canvas { display: block; border-radius: 8px; }
+        canvas {
+            display: block;
+            border-radius: 8px;
+        }
         #info {
-            position: absolute; top: 20px; left: 20px; color: #fff;
-            background: rgba(0,0,0,0.85); padding: 14px 22px; border-radius: 14px;
-            font-size: 16.5px; z-index: 10; user-select: none; backdrop-filter: blur(6px);
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            background: rgba(0,0,0,0.8);
+            padding: 14px 22px;
+            border-radius: 14px;
+            font-size: 16.5px;
+            z-index: 10;
+            user-select: none;
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.1);
         }
         #current-player {
-            font-size: 21px; font-weight: bold; margin-top: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 8px;
         }
         #instructions {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            color: #ccc; background: rgba(0,0,0,0.8); padding: 10px 28px;
-            border-radius: 14px; font-size: 14.5px; z-index: 10;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ccc;
+            background: rgba(0,0,0,0.8);
+            padding: 10px 28px;
+            border-radius: 14px;
+            font-size: 14.5px;
+            z-index: 10;
+            user-select: none;
         }
         #win-message {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: #0f0; font-size: 68px; font-weight: bold;
-            text-shadow: 0 0 50px #0f0; pointer-events: none; display: none;
-            z-index: 30; animation: winPop 0.7s ease;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0f0;
+            font-size: 68px;
+            font-weight: bold;
+            text-shadow: 0 0 50px #0f0;
+            pointer-events: none;
+            display: none;
+            z-index: 30;
+            animation: winPop 0.7s ease;
         }
         @keyframes winPop {
             0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
@@ -80,7 +110,7 @@
         let balls = [], cueBall = null;
         let isAiming = false, aimStartX = 0, aimStartY = 0;
         let sunkBalls = 0, currentPlayer = 1, gameWon = false;
-        let ballsSunkThisTurn = 0;
+        let lastSunkThisTurn = 0;
 
         const pockets = [
             {x: BORDER, y: BORDER}, {x: W/2, y: BORDER}, {x: W - BORDER, y: BORDER},
@@ -109,7 +139,7 @@
                 if (Math.abs(this.vx) < 0.07) this.vx = 0;
                 if (Math.abs(this.vy) < 0.07) this.vy = 0;
 
-                // Colisão com bordas
+                // Bordas
                 if (this.x - this.radius < BORDER) { this.x = BORDER + this.radius; this.vx = -this.vx * 0.9; }
                 if (this.x + this.radius > W - BORDER) { this.x = W - BORDER - this.radius; this.vx = -this.vx * 0.9; }
                 if (this.y - this.radius < BORDER) { this.y = BORDER + this.radius; this.vy = -this.vy * 0.9; }
@@ -120,6 +150,7 @@
                 if (this.sunk) return;
                 const speed = Math.hypot(this.vx, this.vy);
 
+                // Sombra
                 ctx.shadowColor = 'rgba(0,0,0,0.85)';
                 ctx.shadowBlur = 16;
                 ctx.shadowOffsetX = 6;
@@ -129,6 +160,7 @@
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
                 ctx.fill();
+
                 ctx.shadowBlur = 0;
 
                 // Brilho
@@ -152,7 +184,7 @@
             sunkBalls = 0;
             currentPlayer = 1;
             gameWon = false;
-            ballsSunkThisTurn = 0;
+            lastSunkThisTurn = 0;
             winMessage.style.display = 'none';
 
             updateUI();
@@ -206,13 +238,16 @@
         }
 
         function drawTable() {
+            // Feltro
             ctx.fillStyle = '#0b4d0b';
             ctx.fillRect(BORDER, BORDER, W - BORDER*2, H - BORDER*2);
 
+            // Borda de madeira
             ctx.strokeStyle = '#3c2a1f';
             ctx.lineWidth = 38;
             ctx.strokeRect(BORDER/2, BORDER/2, W - BORDER, H - BORDER);
 
+            // Linha central
             ctx.strokeStyle = 'rgba(255,255,255,0.15)';
             ctx.lineWidth = 4;
             ctx.beginPath();
@@ -220,6 +255,7 @@
             ctx.lineTo(W/2, H - BORDER - 15);
             ctx.stroke();
 
+            // Buracos
             ctx.fillStyle = '#111';
             pockets.forEach(p => {
                 ctx.beginPath();
@@ -240,7 +276,7 @@
 
                     if (dist < a.radius + b.radius && dist > 0) {
                         const speed = Math.hypot(a.vx, a.vy) + Math.hypot(b.vx, b.vy);
-                        playSound(110 + speed * 7, 0.22, 'triangle', Math.min(1, speed/25));
+                        playSound(120 + speed * 6, 0.25, 'triangle', Math.min(1, speed/22));
 
                         const angle = Math.atan2(dy, dx);
                         const sin = Math.sin(angle), cos = Math.cos(angle);
@@ -277,7 +313,7 @@
                             sunkBalls++;
                             sunkThisTurn++;
                         }
-                        playSound(65, 0.65, 'sine', 0.95);
+                        playSound(70, 0.6, 'sine', 0.9);
                         break;
                     }
                 }
@@ -286,7 +322,7 @@
         }
 
         function allBallsStopped() {
-            return balls.every(b => b.sunk || (Math.abs(b.vx) < 0.12 && Math.abs(b.vy) < 0.12));
+            return balls.every(b => b.sunk || (Math.abs(b.vx) < 0.1 && Math.abs(b.vy) < 0.1));
         }
 
         function drawCueStick() {
@@ -295,7 +331,7 @@
             const dx = cueBall.x - aimStartX;
             const dy = cueBall.y - aimStartY;
             const dist = Math.hypot(dx, dy);
-            const power = Math.min(dist / 4.8, 100);
+            const power = Math.min(dist / 4.5, 100);
             const angle = Math.atan2(dy, dx);
             const dirX = Math.cos(angle);
             const dirY = Math.sin(angle);
@@ -307,25 +343,25 @@
             ctx.shadowBlur = 12;
             ctx.shadowColor = 'rgba(0,0,0,0.8)';
             ctx.beginPath();
-            ctx.moveTo(cueBall.x - dirX * 30, cueBall.y - dirY * 30);
-            ctx.lineTo(cueBall.x - dirX * (78 + power * 2.2), cueBall.y - dirY * (78 + power * 2.2));
+            ctx.moveTo(cueBall.x - dirX * 28, cueBall.y - dirY * 28);
+            ctx.lineTo(cueBall.x - dirX * (75 + power * 2), cueBall.y - dirY * (75 + power * 2));
             ctx.stroke();
 
             // Mira
-            ctx.strokeStyle = `rgba(255, 240, 100, ${0.75 - power/200})`;
-            ctx.lineWidth = 2.2;
-            ctx.setLineDash([6, 24]);
+            ctx.strokeStyle = `rgba(255, 240, 100, ${0.8 - power/180})`;
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([8, 22]);
             ctx.beginPath();
             ctx.moveTo(cueBall.x, cueBall.y);
             ctx.lineTo(cueBall.x + dirX * 950, cueBall.y + dirY * 950);
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Barra de força
-            ctx.fillStyle = '#222';
-            ctx.fillRect(cueBall.x - 20, cueBall.y - 52, 40, 9);
+            // Força
             ctx.fillStyle = power > 70 ? '#ff3333' : '#ffeb3b';
-            ctx.fillRect(cueBall.x - 19, cueBall.y - 51, 38 * (power / 100), 7);
+            ctx.fillRect(cueBall.x - 19, cueBall.y - 48, 38, 7);
+            ctx.fillStyle = '#111';
+            ctx.fillRect(cueBall.x - 19, cueBall.y - 48, 38 * (power / 100), 7);
         }
 
         function switchPlayer() {
@@ -341,7 +377,7 @@
                 winMessage.style.color = currentPlayer === 1 ? '#4fc3f7' : '#ff9800';
                 winMessage.innerHTML = `🎉 JOGADOR ${currentPlayer} VENCEU!`;
                 winMessage.style.display = 'block';
-                setTimeout(createBalls, 4500);
+                setTimeout(createBalls, 4200);
             }
         }
 
@@ -360,14 +396,10 @@
             if (isAiming) drawCueStick();
 
             if (allBallsStopped() && !gameWon) {
-                if (sunkThisTurn > 0) {
-                    ballsSunkThisTurn += sunkThisTurn;
-                } else {
-                    if (ballsSunkThisTurn === 0) {
-                        switchPlayer();
-                    }
-                    ballsSunkThisTurn = 0;
+                if (sunkThisTurn === 0 && lastSunkThisTurn === 0) {
+                    switchPlayer();
                 }
+                lastSunkThisTurn = sunkThisTurn;
                 checkWin();
             }
 
@@ -386,15 +418,15 @@
             if (!isAiming || !cueBall) return;
             const dx = cueBall.x - x;
             const dy = cueBall.y - y;
-            const power = Math.min(Math.hypot(dx, dy) * 0.148, 23);
+            const power = Math.min(Math.hypot(dx, dy) * 0.145, 22);
 
-            cueBall.vx = dx * 0.148;
-            cueBall.vy = dy * 0.148;
+            cueBall.vx = dx * 0.145;
+            cueBall.vy = dy * 0.145;
             isAiming = false;
-            ballsSunkThisTurn = 0;
+            lastSunkThisTurn = 0;
         }
 
-        // Eventos Mouse/Touch
+        // Eventos
         const events = ['mousedown', 'touchstart'];
         events.forEach(ev => canvas.addEventListener(ev, e => {
             e.preventDefault();
