@@ -20,48 +20,83 @@
             overflow: hidden;
         }
         #game-container {
-            position: relative;
+            display: flex;
+            align-items: stretch;
             box-shadow: 0 0 40px rgba(0,0,0,0.8);
-            border-radius: 8px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #111;
+        }
+        #sidebar {
+            width: 160px;
+            background: linear-gradient(180deg, #1e1e1e 0%, #121212 100%);
+            color: #fff;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 3px solid #333;
+        }
+        #sidebar h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #eee;
+            letter-spacing: 1px;
+        }
+        .score-block {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 14px 12px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .score-block .label {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .score-block .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff;
+        }
+        #current-player {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 6px;
+        }
+        #group-info {
+            font-size: 14px;
+            margin-top: 8px;
+            color: #ccc;
+        }
+        #instructions {
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+            line-height: 1.5;
+            margin-top: 20px;
+        }
+        #instructions strong {
+            color: #ddd;
+        }
+        .canvas-wrapper {
+            position: relative;
         }
         canvas {
             display: block;
             background: #0a3d0a;
-            border-radius: 6px;
             cursor: crosshair;
-        }
-        #info {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(0,0,0,0.75);
-            color: #fff;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 15px;
-            line-height: 1.5;
-            pointer-events: none;
-            z-index: 10;
-        }
-        #instructions {
-            position: absolute;
-            bottom: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
-            color: #ddd;
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-size: 13px;
-            pointer-events: none;
-            z-index: 10;
         }
         #win-message {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.92);
             color: #fff;
             font-size: 32px;
             font-weight: bold;
@@ -93,20 +128,35 @@
 </head>
 <body>
     <div id="game-container">
-        <canvas id="canvas" width="900" height="500"></canvas>
-        
-        <div id="info">
-            <strong>Sinuca 8 Bolas</strong><br>
-            Bolas restantes: <span id="balls-left">7</span><br>
-            <span id="current-player">Jogador 1</span>
-            <span id="group-info" style="font-size:14px; display:block; margin-top:6px;"></span>
+        <!-- PLACAR DO LADO -->
+        <div id="sidebar">
+            <div>
+                <h2>SINUCA<br>8 BOLAS</h2>
+
+                <div class="score-block">
+                    <div class="label">Bolas restantes</div>
+                    <div class="value" id="balls-left">7</div>
+                </div>
+
+                <div class="score-block">
+                    <div class="label">Vez de</div>
+                    <div id="current-player">Jogador 1</div>
+                    <div id="group-info">Mesa Aberta</div>
+                </div>
+            </div>
+
+            <div id="instructions">
+                Arraste da bola branca<br>
+                <strong>R</strong> = Reiniciar
+            </div>
         </div>
 
-        <div id="instructions">
-            Arraste da bola branca • <strong>R</strong> Reiniciar
+        <!-- MESA -->
+        <div class="canvas-wrapper">
+            <canvas id="canvas" width="900" height="500"></canvas>
+            <div id="win-message"></div>
+            <div id="foul-message">FOUL!</div>
         </div>
-        <div id="win-message"></div>
-        <div id="foul-message">FOUL!</div>
     </div>
 
     <script>
@@ -125,7 +175,12 @@
         let isAiming = false, aimStartX = 0, aimStartY = 0;
         let sunkBalls = 0, currentPlayer = 1, gameWon = false;
         let playerGroups = {1: null, 2: null};
-        let turnInProgress = false;
+
+        // Acumuladores por tacada
+        let shotActive = false;
+        let shotSunkValid = 0;
+        let shotCueSunk = false;
+        let shotEightSunk = false;
 
         const pockets = [
             {x: BORDER, y: BORDER}, {x: W/2, y: BORDER}, {x: W - BORDER, y: BORDER},
@@ -143,7 +198,6 @@
                 this.color = ballColors[num] || '#111';
                 this.sunk = false;
             }
-
             update() {
                 if (this.sunk) return;
                 this.x += this.vx;
@@ -153,13 +207,11 @@
                 if (Math.abs(this.vx) < 0.08) this.vx = 0;
                 if (Math.abs(this.vy) < 0.08) this.vy = 0;
 
-                // Colisões com bordas
                 if (this.x - this.radius < BORDER) { this.x = BORDER + this.radius; this.vx = -this.vx * 0.88; }
                 if (this.x + this.radius > W - BORDER) { this.x = W - BORDER - this.radius; this.vx = -this.vx * 0.88; }
                 if (this.y - this.radius < BORDER) { this.y = BORDER + this.radius; this.vy = -this.vy * 0.88; }
                 if (this.y + this.radius > H - BORDER) { this.y = H - BORDER - this.radius; this.vy = -this.vy * 0.88; }
             }
-
             draw() {
                 if (this.sunk) return;
                 const speed = Math.hypot(this.vx, this.vy);
@@ -173,7 +225,6 @@
                 ctx.fill();
                 ctx.shadowBlur = 0;
 
-                // Brilho
                 ctx.fillStyle = `rgba(255,255,255,${0.55 + speed * 0.04})`;
                 ctx.beginPath();
                 ctx.arc(this.x - 6.5, this.y - 7.5, 8.5, 0, Math.PI * 2);
@@ -195,7 +246,10 @@
             currentPlayer = 1;
             gameWon = false;
             playerGroups = {1: null, 2: null};
-            turnInProgress = false;
+            shotActive = false;
+            shotSunkValid = 0;
+            shotCueSunk = false;
+            shotEightSunk = false;
             winMessage.style.display = 'none';
             foulMessage.style.display = 'none';
             updateUI();
@@ -298,13 +352,6 @@
         }
 
         function checkPockets() {
-            let sunkThisTurn = 0;
-            let cueSunk = false;
-            let eightSunk = false;
-            let validSunkThisTurn = 0;
-
-            const playerGroup = playerGroups[currentPlayer];
-
             for (let ball of balls) {
                 if (ball.sunk) continue;
                 for (let p of pockets) {
@@ -313,37 +360,32 @@
                         ball.vx = ball.vy = 0;
 
                         if (ball.number === 0) {
-                            cueSunk = true;
+                            shotCueSunk = true;
                             respawnCueBall();
                             playSound(180, 0.8, 'sine', 0.6);
                         } else if (ball.number === 8) {
-                            eightSunk = true;
+                            shotEightSunk = true;
                             playSound(65, 0.65, 'sine', 0.95);
                         } else {
                             sunkBalls++;
-                            sunkThisTurn++;
                             playSound(65, 0.65, 'sine', 0.95);
 
-                            // Atribui grupos na primeira bola encaçapada
                             if (!playerGroups[currentPlayer]) {
                                 playerGroups[currentPlayer] = ball.number <= 7 ? 'solid' : 'stripe';
                                 playerGroups[currentPlayer === 1 ? 2 : 1] = playerGroups[currentPlayer] === 'solid' ? 'stripe' : 'solid';
                             }
 
-                            // Verifica se é bola do grupo do jogador atual
-                            if (playerGroup) {
-                                const isMyGroup = (playerGroup === 'solid' && ball.number <= 7) || 
-                                                 (playerGroup === 'stripe' && ball.number > 8);
-                                if (isMyGroup) validSunkThisTurn++;
-                            } else {
-                                validSunkThisTurn++; // Mesa aberta
-                            }
+                            const group = playerGroups[currentPlayer];
+                            const isMyGroup = !group ||
+                                (group === 'solid' && ball.number <= 7) ||
+                                (group === 'stripe' && ball.number > 8);
+
+                            if (isMyGroup) shotSunkValid++;
                         }
                         break;
                     }
                 }
             }
-            return { sunkThisTurn, cueSunk, eightSunk, validSunkThisTurn };
         }
 
         function respawnCueBall() {
@@ -395,7 +437,6 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Indicador de força
             ctx.fillStyle = '#111';
             ctx.fillRect(cueBall.x - 21, cueBall.y - 52, 42, 8);
             ctx.fillStyle = power > 75 ? '#ff4444' : '#ffeb3b';
@@ -417,10 +458,10 @@
             const eight = balls.find(b => b.number === 8);
             if (!eight || !eight.sunk) return;
 
-            const playerGroup = playerGroups[currentPlayer];
+            const group = playerGroups[currentPlayer];
             const hasGroupBallsLeft = balls.some(b => 
                 !b.sunk && b.number !== 0 && b.number !== 8 &&
-                ((playerGroup === 'solid' && b.number <= 7) || (playerGroup === 'stripe' && b.number > 8))
+                ((group === 'solid' && b.number <= 7) || (group === 'stripe' && b.number > 8))
             );
 
             gameWon = true;
@@ -430,6 +471,23 @@
                 `🎉 JOGADOR ${currentPlayer}<br>VENCEU!`;
             winMessage.style.display = 'block';
             setTimeout(createBalls, 5200);
+        }
+
+        function endShot() {
+            if (!shotActive) return;
+            shotActive = false;
+
+            if (shotCueSunk) {
+                showFoul();
+                switchPlayer();
+            } else if (shotSunkValid === 0) {
+                switchPlayer();
+            }
+
+            checkWin();
+            shotSunkValid = 0;
+            shotCueSunk = false;
+            shotEightSunk = false;
         }
 
         function gameLoop() {
@@ -442,31 +500,19 @@
             });
 
             checkCollisions();
-            const pocketResult = checkPockets();
+            checkPockets();
 
             if (isAiming) drawCueStick();
 
-            if (allBallsStopped() && !gameWon && !turnInProgress) {
-                turnInProgress = true;
-                
-                if (pocketResult.cueSunk) {
-                    showFoul();
-                    switchPlayer();
-                } else if (pocketResult.validSunkThisTurn === 0) {
-                    // Não encaçapou bola válida → troca de jogador
-                    switchPlayer();
-                }
-                // Se encaçapou bola válida → mantém o turno (não troca)
-
-                checkWin();
-                turnInProgress = false;
+            if (shotActive && allBallsStopped() && !gameWon) {
+                endShot();
             }
 
             requestAnimationFrame(gameLoop);
         }
 
         function startAim(x, y) {
-            if (gameWon || !cueBall || !allBallsStopped() || cueBall.sunk) return;
+            if (gameWon || !cueBall || !allBallsStopped() || cueBall.sunk || shotActive) return;
             isAiming = true;
             aimStartX = x;
             aimStartY = y;
@@ -476,13 +522,15 @@
             if (!isAiming || !cueBall) return;
             const dx = cueBall.x - x;
             const dy = cueBall.y - y;
-            const power = Math.min(Math.hypot(dx, dy) * 0.148, 23);
             cueBall.vx = dx * 0.148;
             cueBall.vy = dy * 0.148;
             isAiming = false;
+            shotActive = true;
+            shotSunkValid = 0;
+            shotCueSunk = false;
+            shotEightSunk = false;
         }
 
-        // Controles
         ['mousedown', 'touchstart'].forEach(ev => {
             canvas.addEventListener(ev, e => {
                 e.preventDefault();
@@ -515,7 +563,6 @@
             if (e.key.toLowerCase() === 'r') createBalls();
         });
 
-        // Iniciar
         createBalls();
         gameLoop();
     </script>
