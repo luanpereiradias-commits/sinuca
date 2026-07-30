@@ -1,9 +1,93 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinuca 8 Bolas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            border-radius: 8px;
+        }
+        canvas {
+            display: block;
+            background: #0a3d0a;
+            border-radius: 6px;
+            cursor: crosshair;
+        }
+        #info {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(0,0,0,0.75);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 15px;
+            line-height: 1.5;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: #ddd;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #win-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: #fff;
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            padding: 30px 50px;
+            border-radius: 16px;
             display: none;
+            z-index: 20;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            line-height: 1.4;
+        }
+        #foul-message {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #c62828;
+            color: #fff;
+            font-size: 28px;
+            font-weight: bold;
+            padding: 12px 40px;
+            border-radius: 10px;
+            display: none;
+            z-index: 15;
             box-shadow: 0 0 25px #c62828;
+            letter-spacing: 3px;
         }
     </style>
 </head>
@@ -217,7 +301,7 @@
             let sunkThisTurn = 0;
             let cueSunk = false;
             let eightSunk = false;
-            let validSunkThisTurn = 0; // Para lógica de continuar turno
+            let validSunkThisTurn = 0;
 
             const playerGroup = playerGroups[currentPlayer];
 
