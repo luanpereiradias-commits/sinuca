@@ -5,84 +5,114 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sinuca 8 Bolas</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap');
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
         body {
-            background: #1a1a1a;
+            background: radial-gradient(ellipse at center, #2a2a2a 0%, #0d0d0d 70%);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Outfit', 'Segoe UI', Arial, sans-serif;
             overflow: hidden;
         }
         #game-container {
             display: flex;
             align-items: stretch;
-            box-shadow: 0 0 40px rgba(0,0,0,0.8);
-            border-radius: 10px;
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.06),
+                0 25px 80px rgba(0,0,0,0.7),
+                0 0 60px rgba(0,40,0,0.3);
+            border-radius: 16px;
             overflow: hidden;
-            background: #111;
+            background: #0a0a0a;
         }
+
+        /* ===== SIDEBAR ===== */
         #sidebar {
-            width: 170px;
-            background: linear-gradient(180deg, #1e1e1e 0%, #121212 100%);
+            width: 180px;
+            background: linear-gradient(175deg, #1c1c1e 0%, #121214 50%, #0e0e10 100%);
             color: #fff;
-            padding: 18px 14px;
+            padding: 22px 16px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            border-right: 3px solid #333;
+            border-right: 1px solid rgba(255,255,255,0.06);
+            position: relative;
+        }
+        #sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #4fc3f7, #81c784, #ffb74d);
         }
         #sidebar h2 {
-            font-size: 17px;
-            margin-bottom: 16px;
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 18px;
             text-align: center;
-            color: #eee;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #fff 30%, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.35;
         }
         .score-block {
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-            padding: 12px 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 14px 12px;
             margin-bottom: 12px;
             text-align: center;
+            transition: background 0.2s;
+        }
+        .score-block:hover {
+            background: rgba(255,255,255,0.06);
         }
         .score-block .label {
-            font-size: 11px;
-            color: #aaa;
-            margin-bottom: 3px;
+            font-size: 10px;
+            color: #777;
+            margin-bottom: 4px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            font-weight: 600;
         }
         .score-block .value {
-            font-size: 26px;
-            font-weight: bold;
+            font-size: 28px;
+            font-weight: 800;
             color: #fff;
+            text-shadow: 0 0 20px rgba(255,255,255,0.15);
         }
         #current-player {
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 17px;
+            font-weight: 700;
             margin-top: 4px;
+            transition: color 0.3s;
         }
         #group-info {
-            font-size: 13px;
+            font-size: 12px;
             margin-top: 6px;
-            color: #ccc;
+            color: #999;
+            font-weight: 500;
         }
+
         .cues-section {
-            margin-top: 8px;
+            margin-top: 6px;
         }
         .cues-section .label {
-            font-size: 11px;
-            color: #aaa;
+            font-size: 10px;
+            color: #777;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            font-weight: 600;
         }
         .cues-grid {
             display: grid;
@@ -90,40 +120,55 @@
             gap: 8px;
         }
         .cue-btn {
-            background: rgba(255,255,255,0.07);
-            border: 2px solid transparent;
-            border-radius: 8px;
-            padding: 8px 4px;
+            background: rgba(255,255,255,0.03);
+            border: 1.5px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 9px 5px 7px;
             cursor: pointer;
             text-align: center;
-            transition: all 0.2s;
-            color: #ddd;
-            font-size: 11px;
+            transition: all 0.25s ease;
+            color: #aaa;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
         .cue-btn:hover {
-            background: rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.07);
+            border-color: rgba(255,255,255,0.15);
+            color: #ddd;
+            transform: translateY(-1px);
         }
         .cue-btn.selected {
             border-color: #4fc3f7;
-            background: rgba(79,195,247,0.15);
+            background: rgba(79,195,247,0.12);
             color: #fff;
+            box-shadow: 0 0 12px rgba(79,195,247,0.25);
         }
         .cue-preview {
-            height: 8px;
-            border-radius: 4px;
-            margin: 0 auto 5px;
-            width: 80%;
+            height: 10px;
+            border-radius: 5px;
+            margin: 0 auto 4px;
+            width: 85%;
+            position: relative;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
         }
+
         #instructions {
             font-size: 11px;
-            color: #888;
+            color: #666;
             text-align: center;
-            line-height: 1.5;
-            margin-top: 14px;
+            line-height: 1.6;
+            margin-top: 12px;
+            font-weight: 500;
         }
         #instructions strong {
-            color: #ddd;
+            color: #bbb;
+            background: rgba(255,255,255,0.08);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 700;
         }
+
         .canvas-wrapper {
             position: relative;
         }
@@ -132,44 +177,61 @@
             background: #0a3d0a;
             cursor: crosshair;
         }
+
         #win-message {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.92);
+            background: linear-gradient(145deg, rgba(15,15,15,0.95), rgba(30,30,30,0.95));
             color: #fff;
-            font-size: 32px;
-            font-weight: bold;
+            font-size: 30px;
+            font-weight: 800;
             text-align: center;
-            padding: 30px 50px;
-            border-radius: 16px;
+            padding: 36px 56px;
+            border-radius: 20px;
             display: none;
             z-index: 20;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
-            line-height: 1.4;
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.1),
+                0 20px 60px rgba(0,0,0,0.6),
+                0 0 40px rgba(79,195,247,0.15);
+            line-height: 1.45;
+            letter-spacing: 1px;
+            animation: popIn 0.4s ease;
         }
         #foul-message {
             position: absolute;
-            top: 80px;
+            top: 70px;
             left: 50%;
             transform: translateX(-50%);
-            background: #c62828;
+            background: linear-gradient(135deg, #c62828, #e53935);
             color: #fff;
-            font-size: 28px;
-            font-weight: bold;
-            padding: 12px 40px;
-            border-radius: 10px;
+            font-size: 26px;
+            font-weight: 800;
+            padding: 12px 44px;
+            border-radius: 12px;
             display: none;
             z-index: 15;
-            box-shadow: 0 0 25px #c62828;
-            letter-spacing: 3px;
+            box-shadow: 0 8px 30px rgba(198,40,40,0.5);
+            letter-spacing: 4px;
+            animation: shake 0.4s ease;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        @keyframes shake {
+            0%,100% { transform: translateX(-50%); }
+            20% { transform: translateX(calc(-50% - 8px)); }
+            40% { transform: translateX(calc(-50% + 8px)); }
+            60% { transform: translateX(calc(-50% - 5px)); }
+            80% { transform: translateX(calc(-50% + 5px)); }
         }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <!-- PLACAR + TACOS -->
         <div id="sidebar">
             <div>
                 <h2>SINUCA<br>8 BOLAS</h2>
@@ -187,19 +249,16 @@
 
                 <div class="cues-section">
                     <div class="label">Escolher Taco</div>
-                    <div class="cues-grid" id="cues-grid">
-                        <!-- preenchido via JS -->
-                    </div>
+                    <div class="cues-grid" id="cues-grid"></div>
                 </div>
             </div>
 
             <div id="instructions">
                 Arraste da bola branca<br>
-                <strong>R</strong> = Reiniciar
+                <strong>R</strong> Reiniciar
             </div>
         </div>
 
-        <!-- MESA -->
         <div class="canvas-wrapper">
             <canvas id="canvas" width="900" height="500"></canvas>
             <div id="win-message"></div>
@@ -214,66 +273,41 @@
         const foulMessage = document.getElementById('foul-message');
 
         const W = 900, H = 500;
-        const BORDER = 40;
+        const BORDER = 42;
         const BALL_RADIUS = 14;
-        const POCKET_RADIUS = 22;
+        const POCKET_RADIUS = 24;
         const FRICTION = 0.978;
 
-        // ===== TACOS (com desenhos detalhados) =====
         const cues = [
             {
                 name: 'Clássico',
-                shaft: '#c4a574',
-                butt: '#8b6914',
-                grip: '#3d2b1f',
-                rings: ['#e8d5b0', '#5c4033'],
-                tip: '#f5f5f5',
-                power: 1.00
+                shaft: '#c4a574', butt: '#8b6914', grip: '#3d2b1f',
+                rings: ['#e8d5b0', '#5c4033'], tip: '#f5f5f5', power: 1.00
             },
             {
                 name: 'Azul',
-                shaft: '#2563eb',
-                butt: '#1e3a8a',
-                grip: '#0f172a',
-                rings: ['#93c5fd', '#1e40af'],
-                tip: '#dbeafe',
-                power: 1.05
+                shaft: '#2563eb', butt: '#1e3a8a', grip: '#0f172a',
+                rings: ['#93c5fd', '#1e40af'], tip: '#dbeafe', power: 1.05
             },
             {
                 name: 'Vermelho',
-                shaft: '#dc2626',
-                butt: '#7f1d1d',
-                grip: '#1c1917',
-                rings: ['#fca5a5', '#991b1b'],
-                tip: '#fee2e2',
-                power: 1.08
+                shaft: '#dc2626', butt: '#7f1d1d', grip: '#1c1917',
+                rings: ['#fca5a5', '#991b1b'], tip: '#fee2e2', power: 1.08
             },
             {
                 name: 'Verde',
-                shaft: '#16a34a',
-                butt: '#14532d',
-                grip: '#052e16',
-                rings: ['#86efac', '#166534'],
-                tip: '#dcfce7',
-                power: 0.97
+                shaft: '#16a34a', butt: '#14532d', grip: '#052e16',
+                rings: ['#86efac', '#166534'], tip: '#dcfce7', power: 0.97
             },
             {
                 name: 'Roxo',
-                shaft: '#9333ea',
-                butt: '#581c87',
-                grip: '#1e1b4b',
-                rings: ['#d8b4fe', '#6b21a8'],
-                tip: '#f3e8ff',
-                power: 1.03
+                shaft: '#9333ea', butt: '#581c87', grip: '#1e1b4b',
+                rings: ['#d8b4fe', '#6b21a8'], tip: '#f3e8ff', power: 1.03
             },
             {
                 name: 'Dourado',
-                shaft: '#ca8a04',
-                butt: '#713f12',
-                grip: '#1c1917',
-                rings: ['#fde047', '#a16207', '#fef08a'],
-                tip: '#fefce8',
-                power: 1.12
+                shaft: '#ca8a04', butt: '#713f12', grip: '#1c1917',
+                rings: ['#fde047', '#a16207', '#fef08a'], tip: '#fefce8', power: 1.12
             }
         ];
         let selectedCue = 0;
@@ -284,15 +318,14 @@
             cues.forEach((cue, i) => {
                 const btn = document.createElement('div');
                 btn.className = 'cue-btn' + (i === selectedCue ? ' selected' : '');
-                // Mini preview com anéis
                 const ringsHtml = cue.rings.map(c =>
-                    `<span style="display:inline-block;width:6px;height:8px;background:${c};margin:0 1px;border-radius:1px;"></span>`
+                    `<span style="display:inline-block;width:5px;height:7px;background:${c};margin:0 1px;border-radius:1px;"></span>`
                 ).join('');
                 btn.innerHTML = `
-                    <div class="cue-preview" style="background:linear-gradient(90deg, ${cue.butt} 0%, ${cue.shaft} 40%, ${cue.shaft} 100%); height:10px; position:relative;">
-                        <div style="position:absolute;right:2px;top:1px;width:4px;height:8px;background:${cue.tip};border-radius:1px;"></div>
+                    <div class="cue-preview" style="background:linear-gradient(90deg, ${cue.butt} 0%, ${cue.shaft} 35%, ${cue.shaft} 100%);">
+                        <div style="position:absolute;right:2px;top:1px;width:5px;height:8px;background:${cue.tip};border-radius:2px;"></div>
                     </div>
-                    <div style="margin:3px 0 2px; line-height:1;">${ringsHtml}</div>
+                    <div style="margin:2px 0 1px;line-height:1;">${ringsHtml}</div>
                     ${cue.name}
                 `;
                 btn.onclick = () => {
@@ -309,7 +342,6 @@
         let isAiming = false, aimStartX = 0, aimStartY = 0;
         let sunkBalls = 0, currentPlayer = 1, gameWon = false;
         let playerGroups = {1: null, 2: null};
-
         let shotActive = false;
         let shotSunkValid = 0;
         let shotCueSunk = false;
@@ -320,7 +352,11 @@
             {x: BORDER, y: H - BORDER}, {x: W/2, y: H - BORDER}, {x: W - BORDER, y: H - BORDER}
         ];
 
-        const ballColors = ['#fff', '#e74c3c', '#3498db', '#f39c12', '#9b59b6', '#f1c40f', '#2ecc71', '#c0392b', '#111'];
+        const ballColors = {
+            0: '#f5f5f5',
+            1: '#e74c3c', 2: '#3498db', 3: '#e67e22', 4: '#9b59b6',
+            5: '#f1c40f', 6: '#27ae60', 7: '#c0392b', 8: '#1a1a1a'
+        };
 
         class Ball {
             constructor(x, y, num) {
@@ -328,7 +364,7 @@
                 this.vx = 0; this.vy = 0;
                 this.number = num;
                 this.radius = BALL_RADIUS;
-                this.color = ballColors[num] || '#111';
+                this.color = ballColors[num] || '#333';
                 this.sunk = false;
             }
             update() {
@@ -348,29 +384,69 @@
             draw() {
                 if (this.sunk) return;
                 const speed = Math.hypot(this.vx, this.vy);
-                ctx.shadowColor = 'rgba(0,0,0,0.9)';
-                ctx.shadowBlur = 18;
-                ctx.shadowOffsetX = 7;
-                ctx.shadowOffsetY = 8;
+
+                // Sombra no chão
+                ctx.beginPath();
+                ctx.ellipse(this.x + 3, this.y + this.radius * 0.7, this.radius * 0.85, this.radius * 0.3, 0, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,0,0,0.35)';
+                ctx.fill();
+
+                // Bola com gradiente 3D
+                const grad = ctx.createRadialGradient(
+                    this.x - 4, this.y - 5, 2,
+                    this.x, this.y, this.radius
+                );
+                grad.addColorStop(0, lighten(this.color, 40));
+                grad.addColorStop(0.5, this.color);
+                grad.addColorStop(1, darken(this.color, 25));
+
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
+                ctx.fillStyle = grad;
                 ctx.fill();
-                ctx.shadowBlur = 0;
 
-                ctx.fillStyle = `rgba(255,255,255,${0.55 + speed * 0.04})`;
+                ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Brilho
                 ctx.beginPath();
-                ctx.arc(this.x - 6.5, this.y - 7.5, 8.5, 0, Math.PI * 2);
+                ctx.arc(this.x - 5, this.y - 6, 5.5, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,255,255,${0.45 + speed * 0.03})`;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(this.x - 3, this.y - 4, 2, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
                 ctx.fill();
 
                 if (this.number > 0) {
-                    ctx.fillStyle = this.number === 8 ? '#fff' : '#000';
-                    ctx.font = 'bold 14px Arial';
+                    if (this.number !== 8) {
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, 7.5, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = this.number === 8 ? '#fff' : '#111';
+                    ctx.font = 'bold 13px Outfit, Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(this.number, this.x, this.y + 1.5);
+                    ctx.fillText(this.number, this.x, this.y + 0.5);
                 }
             }
+        }
+
+        function lighten(hex, pct) {
+            const num = parseInt(hex.replace('#',''), 16);
+            let r = (num >> 16) + pct, g = ((num >> 8) & 0xff) + pct, b = (num & 0xff) + pct;
+            r = Math.min(255, r); g = Math.min(255, g); b = Math.min(255, b);
+            return `rgb(${r},${g},${b})`;
+        }
+        function darken(hex, pct) {
+            const num = parseInt(hex.replace('#',''), 16);
+            let r = (num >> 16) - pct, g = ((num >> 8) & 0xff) - pct, b = (num & 0xff) - pct;
+            r = Math.max(0, r); g = Math.max(0, g); b = Math.max(0, b);
+            return `rgb(${r},${g},${b})`;
         }
 
         function createBalls() {
@@ -397,7 +473,6 @@
                 {x:2,y:-2,n:4}, {x:2,y:0,n:8}, {x:2,y:2,n:5},
                 {x:3,y:-1,n:6}, {x:3,y:1,n:7}
             ];
-
             positions.forEach(p => {
                 const x = startX + p.x * (BALL_RADIUS * 2.16);
                 const y = startY + p.y * (BALL_RADIUS * 2.12);
@@ -409,7 +484,7 @@
             document.getElementById('balls-left').textContent = 7 - sunkBalls;
             const playerEl = document.getElementById('current-player');
             playerEl.textContent = `Jogador ${currentPlayer}`;
-            playerEl.style.color = currentPlayer === 1 ? '#4fc3f7' : '#ff9800';
+            playerEl.style.color = currentPlayer === 1 ? '#4fc3f7' : '#ffb74d';
             const groupEl = document.getElementById('group-info');
             const group = playerGroups[currentPlayer];
             groupEl.textContent = group ?
@@ -431,24 +506,67 @@
         }
 
         function drawTable() {
-            ctx.fillStyle = '#0a4a0a';
+            // Felt
+            const feltGrad = ctx.createRadialGradient(W/2, H/2, 50, W/2, H/2, 500);
+            feltGrad.addColorStop(0, '#0d5c0d');
+            feltGrad.addColorStop(1, '#084008');
+            ctx.fillStyle = feltGrad;
             ctx.fillRect(BORDER, BORDER, W - BORDER*2, H - BORDER*2);
-            ctx.strokeStyle = '#3c2a1f';
-            ctx.lineWidth = 42;
-            ctx.strokeRect(BORDER/2, BORDER/2, W - BORDER, H - BORDER);
 
-            ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-            ctx.lineWidth = 4;
+            // Rails
+            const railGrad = ctx.createLinearGradient(0, 0, 0, H);
+            railGrad.addColorStop(0, '#5c3a1e');
+            railGrad.addColorStop(0.3, '#4a2e14');
+            railGrad.addColorStop(0.7, '#3d2610');
+            railGrad.addColorStop(1, '#2e1c0c');
+            ctx.strokeStyle = railGrad;
+            ctx.lineWidth = 44;
+            ctx.lineJoin = 'round';
+            ctx.strokeRect(BORDER/2 + 2, BORDER/2 + 2, W - BORDER - 4, H - BORDER - 4);
+
+            // Destaque madeira
+            ctx.strokeStyle = 'rgba(180,130,70,0.35)';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(BORDER - 2, BORDER - 2, W - BORDER*2 + 4, H - BORDER*2 + 4);
+
+            // Linha central
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 12]);
             ctx.beginPath();
-            ctx.moveTo(W/2, BORDER + 18);
-            ctx.lineTo(W/2, H - BORDER - 18);
+            ctx.moveTo(W/2, BORDER + 16);
+            ctx.lineTo(W/2, H - BORDER - 16);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Círculo de saque
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(230, H/2, 55, 0, Math.PI * 2);
             ctx.stroke();
 
-            ctx.fillStyle = '#111';
+            // Caçapas
             pockets.forEach(p => {
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, POCKET_RADIUS + 3, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
                 ctx.fill();
+
+                const pocketGrad = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, POCKET_RADIUS);
+                pocketGrad.addColorStop(0, '#0a0a0a');
+                pocketGrad.addColorStop(0.7, '#111');
+                pocketGrad.addColorStop(1, '#1a1a1a');
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2);
+                ctx.fillStyle = pocketGrad;
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(100,80,50,0.5)';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, POCKET_RADIUS + 1, 0, Math.PI * 2);
+                ctx.stroke();
             });
         }
 
@@ -546,7 +664,6 @@
             const dirX = Math.cos(angle);
             const dirY = Math.sin(angle);
 
-            // Helper para desenhar segmento do taco
             function drawSegment(fromDist, toDist, color, width) {
                 ctx.strokeStyle = color;
                 ctx.lineWidth = width;
@@ -557,25 +674,17 @@
                 ctx.stroke();
             }
 
-            ctx.shadowBlur = 14;
-            ctx.shadowColor = 'rgba(0,0,0,0.85)';
+            ctx.shadowBlur = 16;
+            ctx.shadowColor = 'rgba(0,0,0,0.7)';
 
-            const tipStart = 30;
-            const tipEnd = 48;
-            const shaftStart = tipEnd;
-            const shaftEnd = 95 + power * 1.6;
-            const gripStart = shaftEnd;
-            const gripEnd = shaftEnd + 55;
-            const buttStart = gripEnd;
-            const buttEnd = gripEnd + 38;
+            const tipStart = 30, tipEnd = 48;
+            const shaftStart = tipEnd, shaftEnd = 95 + power * 1.6;
+            const gripStart = shaftEnd, gripEnd = shaftEnd + 55;
+            const buttStart = gripEnd, buttEnd = gripEnd + 38;
 
-            // 1. Ponta (tip)
             drawSegment(tipStart, tipEnd, cue.tip, 4.5);
-
-            // 2. Shaft (corpo fino)
             drawSegment(shaftStart, shaftEnd, cue.shaft, 6.5);
 
-            // 3. Anéis decorativos no shaft (perto do grip)
             const ringPositions = [shaftEnd - 8, shaftEnd - 18, shaftEnd - 28];
             cue.rings.forEach((ringColor, i) => {
                 if (ringPositions[i] !== undefined) {
@@ -583,12 +692,9 @@
                 }
             });
 
-            // 4. Grip (empunhadura mais grossa e escura)
             drawSegment(gripStart, gripEnd, cue.grip, 9);
-
-            // Detalhe de textura no grip (linhas finas)
             ctx.lineWidth = 1.2;
-            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
             for (let i = 0; i < 6; i++) {
                 const t = gripStart + 8 + i * 7;
                 ctx.beginPath();
@@ -597,29 +703,41 @@
                 ctx.stroke();
             }
 
-            // 5. Butt (cabo)
             drawSegment(buttStart, buttEnd, cue.butt, 11);
-
-            // Anel final no butt
             drawSegment(buttEnd - 6, buttEnd - 2, cue.rings[0] || '#ccc', 12);
 
             ctx.shadowBlur = 0;
 
-            // Linha de mira
-            ctx.strokeStyle = `rgba(255, 245, 120, ${0.75 - power/200})`;
-            ctx.lineWidth = 2.2;
-            ctx.setLineDash([6, 24]);
+            // Mira
+            const aimGrad = ctx.createLinearGradient(
+                cueBall.x, cueBall.y,
+                cueBall.x + dirX * 400, cueBall.y + dirY * 400
+            );
+            aimGrad.addColorStop(0, `rgba(255, 245, 120, ${0.8 - power/250})`);
+            aimGrad.addColorStop(1, 'rgba(255, 245, 120, 0)');
+            ctx.strokeStyle = aimGrad;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 18]);
             ctx.beginPath();
             ctx.moveTo(cueBall.x, cueBall.y);
-            ctx.lineTo(cueBall.x + dirX * 980, cueBall.y + dirY * 980);
+            ctx.lineTo(cueBall.x + dirX * 900, cueBall.y + dirY * 900);
             ctx.stroke();
             ctx.setLineDash([]);
 
             // Barra de força
-            ctx.fillStyle = '#111';
-            ctx.fillRect(cueBall.x - 21, cueBall.y - 52, 42, 8);
-            ctx.fillStyle = power > 75 ? '#ff4444' : '#ffeb3b';
-            ctx.fillRect(cueBall.x - 20, cueBall.y - 51, 40 * (power / 100), 6);
+            const barX = cueBall.x - 22;
+            const barY = cueBall.y - 55;
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, 44, 10, 4);
+            ctx.fill();
+
+            const fillW = 40 * (power / 100);
+            const powerColor = power > 80 ? '#ef4444' : power > 50 ? '#f59e0b' : '#22c55e';
+            ctx.fillStyle = powerColor;
+            ctx.beginPath();
+            ctx.roundRect(barX + 2, barY + 2, fillW, 6, 3);
+            ctx.fill();
         }
 
         function showFoul() {
@@ -644,7 +762,7 @@
             );
 
             gameWon = true;
-            winMessage.style.color = currentPlayer === 1 ? '#4fc3f7' : '#ff9800';
+            winMessage.style.color = currentPlayer === 1 ? '#4fc3f7' : '#ffb74d';
             winMessage.innerHTML = hasGroupBallsLeft ?
                 `❌ JOGADOR ${currentPlayer}<br>PERDEU (8 cedo)` :
                 `🎉 JOGADOR ${currentPlayer}<br>VENCEU!`;
@@ -744,7 +862,6 @@
             if (e.key.toLowerCase() === 'r') createBalls();
         });
 
-        // Iniciar
         buildCueButtons();
         createBalls();
         gameLoop();
