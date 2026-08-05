@@ -28,18 +28,18 @@
             background: #111;
         }
         #sidebar {
-            width: 160px;
+            width: 170px;
             background: linear-gradient(180deg, #1e1e1e 0%, #121212 100%);
             color: #fff;
-            padding: 20px 16px;
+            padding: 18px 14px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             border-right: 3px solid #333;
         }
         #sidebar h2 {
-            font-size: 18px;
-            margin-bottom: 20px;
+            font-size: 17px;
+            margin-bottom: 16px;
             text-align: center;
             color: #eee;
             letter-spacing: 1px;
@@ -47,38 +47,79 @@
         .score-block {
             background: rgba(255,255,255,0.05);
             border-radius: 10px;
-            padding: 14px 12px;
-            margin-bottom: 16px;
+            padding: 12px 10px;
+            margin-bottom: 12px;
             text-align: center;
         }
         .score-block .label {
-            font-size: 12px;
+            font-size: 11px;
             color: #aaa;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
         .score-block .value {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: bold;
             color: #fff;
         }
         #current-player {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
-            margin-top: 6px;
+            margin-top: 4px;
         }
         #group-info {
-            font-size: 14px;
-            margin-top: 8px;
+            font-size: 13px;
+            margin-top: 6px;
             color: #ccc;
         }
+        .cues-section {
+            margin-top: 8px;
+        }
+        .cues-section .label {
+            font-size: 11px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .cues-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .cue-btn {
+            background: rgba(255,255,255,0.07);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 8px 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            color: #ddd;
+            font-size: 11px;
+        }
+        .cue-btn:hover {
+            background: rgba(255,255,255,0.12);
+        }
+        .cue-btn.selected {
+            border-color: #4fc3f7;
+            background: rgba(79,195,247,0.15);
+            color: #fff;
+        }
+        .cue-preview {
+            height: 8px;
+            border-radius: 4px;
+            margin: 0 auto 5px;
+            width: 80%;
+        }
         #instructions {
-            font-size: 12px;
+            font-size: 11px;
             color: #888;
             text-align: center;
             line-height: 1.5;
-            margin-top: 20px;
+            margin-top: 14px;
         }
         #instructions strong {
             color: #ddd;
@@ -128,7 +169,7 @@
 </head>
 <body>
     <div id="game-container">
-        <!-- PLACAR DO LADO -->
+        <!-- PLACAR + TACOS -->
         <div id="sidebar">
             <div>
                 <h2>SINUCA<br>8 BOLAS</h2>
@@ -142,6 +183,13 @@
                     <div class="label">Vez de</div>
                     <div id="current-player">Jogador 1</div>
                     <div id="group-info">Mesa Aberta</div>
+                </div>
+
+                <div class="cues-section">
+                    <div class="label">Escolher Taco</div>
+                    <div class="cues-grid" id="cues-grid">
+                        <!-- preenchido via JS -->
+                    </div>
                 </div>
             </div>
 
@@ -171,12 +219,97 @@
         const POCKET_RADIUS = 22;
         const FRICTION = 0.978;
 
+        // ===== TACOS (com desenhos detalhados) =====
+        const cues = [
+            {
+                name: 'Clássico',
+                shaft: '#c4a574',
+                butt: '#8b6914',
+                grip: '#3d2b1f',
+                rings: ['#e8d5b0', '#5c4033'],
+                tip: '#f5f5f5',
+                power: 1.00
+            },
+            {
+                name: 'Azul',
+                shaft: '#2563eb',
+                butt: '#1e3a8a',
+                grip: '#0f172a',
+                rings: ['#93c5fd', '#1e40af'],
+                tip: '#dbeafe',
+                power: 1.05
+            },
+            {
+                name: 'Vermelho',
+                shaft: '#dc2626',
+                butt: '#7f1d1d',
+                grip: '#1c1917',
+                rings: ['#fca5a5', '#991b1b'],
+                tip: '#fee2e2',
+                power: 1.08
+            },
+            {
+                name: 'Verde',
+                shaft: '#16a34a',
+                butt: '#14532d',
+                grip: '#052e16',
+                rings: ['#86efac', '#166534'],
+                tip: '#dcfce7',
+                power: 0.97
+            },
+            {
+                name: 'Roxo',
+                shaft: '#9333ea',
+                butt: '#581c87',
+                grip: '#1e1b4b',
+                rings: ['#d8b4fe', '#6b21a8'],
+                tip: '#f3e8ff',
+                power: 1.03
+            },
+            {
+                name: 'Dourado',
+                shaft: '#ca8a04',
+                butt: '#713f12',
+                grip: '#1c1917',
+                rings: ['#fde047', '#a16207', '#fef08a'],
+                tip: '#fefce8',
+                power: 1.12
+            }
+        ];
+        let selectedCue = 0;
+
+        function buildCueButtons() {
+            const grid = document.getElementById('cues-grid');
+            grid.innerHTML = '';
+            cues.forEach((cue, i) => {
+                const btn = document.createElement('div');
+                btn.className = 'cue-btn' + (i === selectedCue ? ' selected' : '');
+                // Mini preview com anéis
+                const ringsHtml = cue.rings.map(c =>
+                    `<span style="display:inline-block;width:6px;height:8px;background:${c};margin:0 1px;border-radius:1px;"></span>`
+                ).join('');
+                btn.innerHTML = `
+                    <div class="cue-preview" style="background:linear-gradient(90deg, ${cue.butt} 0%, ${cue.shaft} 40%, ${cue.shaft} 100%); height:10px; position:relative;">
+                        <div style="position:absolute;right:2px;top:1px;width:4px;height:8px;background:${cue.tip};border-radius:1px;"></div>
+                    </div>
+                    <div style="margin:3px 0 2px; line-height:1;">${ringsHtml}</div>
+                    ${cue.name}
+                `;
+                btn.onclick = () => {
+                    selectedCue = i;
+                    document.querySelectorAll('.cue-btn').forEach((b, idx) => {
+                        b.classList.toggle('selected', idx === i);
+                    });
+                };
+                grid.appendChild(btn);
+            });
+        }
+
         let balls = [], cueBall = null;
         let isAiming = false, aimStartX = 0, aimStartY = 0;
         let sunkBalls = 0, currentPlayer = 1, gameWon = false;
         let playerGroups = {1: null, 2: null};
 
-        // Acumuladores por tacada
         let shotActive = false;
         let shotSunkValid = 0;
         let shotCueSunk = false;
@@ -279,8 +412,8 @@
             playerEl.style.color = currentPlayer === 1 ? '#4fc3f7' : '#ff9800';
             const groupEl = document.getElementById('group-info');
             const group = playerGroups[currentPlayer];
-            groupEl.textContent = group ? 
-                (group === 'solid' ? '● Sólidas' : '▥ Listadas') : 
+            groupEl.textContent = group ?
+                (group === 'solid' ? '● Sólidas' : '▥ Listadas') :
                 'Mesa Aberta';
         }
 
@@ -403,6 +536,8 @@
 
         function drawCueStick() {
             if (!isAiming || !cueBall || cueBall.sunk) return;
+
+            const cue = cues[selectedCue];
             const dx = cueBall.x - aimStartX;
             const dy = cueBall.y - aimStartY;
             const dist = Math.hypot(dx, dy);
@@ -411,23 +546,66 @@
             const dirX = Math.cos(angle);
             const dirY = Math.sin(angle);
 
-            ctx.strokeStyle = '#d2b48c';
-            ctx.lineWidth = 7;
-            ctx.lineCap = 'round';
-            ctx.shadowBlur = 15;
+            // Helper para desenhar segmento do taco
+            function drawSegment(fromDist, toDist, color, width) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(cueBall.x - dirX * fromDist, cueBall.y - dirY * fromDist);
+                ctx.lineTo(cueBall.x - dirX * toDist, cueBall.y - dirY * toDist);
+                ctx.stroke();
+            }
+
+            ctx.shadowBlur = 14;
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
-            ctx.beginPath();
-            ctx.moveTo(cueBall.x - dirX * 32, cueBall.y - dirY * 32);
-            ctx.lineTo(cueBall.x - dirX * (80 + power * 2.2), cueBall.y - dirY * (80 + power * 2.2));
-            ctx.stroke();
 
-            ctx.strokeStyle = '#eee';
-            ctx.lineWidth = 3.5;
-            ctx.beginPath();
-            ctx.moveTo(cueBall.x - dirX * 35, cueBall.y - dirY * 35);
-            ctx.lineTo(cueBall.x - dirX * 48, cueBall.y - dirY * 48);
-            ctx.stroke();
+            const tipStart = 30;
+            const tipEnd = 48;
+            const shaftStart = tipEnd;
+            const shaftEnd = 95 + power * 1.6;
+            const gripStart = shaftEnd;
+            const gripEnd = shaftEnd + 55;
+            const buttStart = gripEnd;
+            const buttEnd = gripEnd + 38;
 
+            // 1. Ponta (tip)
+            drawSegment(tipStart, tipEnd, cue.tip, 4.5);
+
+            // 2. Shaft (corpo fino)
+            drawSegment(shaftStart, shaftEnd, cue.shaft, 6.5);
+
+            // 3. Anéis decorativos no shaft (perto do grip)
+            const ringPositions = [shaftEnd - 8, shaftEnd - 18, shaftEnd - 28];
+            cue.rings.forEach((ringColor, i) => {
+                if (ringPositions[i] !== undefined) {
+                    drawSegment(ringPositions[i] - 2.5, ringPositions[i] + 2.5, ringColor, 8.5);
+                }
+            });
+
+            // 4. Grip (empunhadura mais grossa e escura)
+            drawSegment(gripStart, gripEnd, cue.grip, 9);
+
+            // Detalhe de textura no grip (linhas finas)
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+            for (let i = 0; i < 6; i++) {
+                const t = gripStart + 8 + i * 7;
+                ctx.beginPath();
+                ctx.moveTo(cueBall.x - dirX * t, cueBall.y - dirY * t);
+                ctx.lineTo(cueBall.x - dirX * (t + 3), cueBall.y - dirY * (t + 3));
+                ctx.stroke();
+            }
+
+            // 5. Butt (cabo)
+            drawSegment(buttStart, buttEnd, cue.butt, 11);
+
+            // Anel final no butt
+            drawSegment(buttEnd - 6, buttEnd - 2, cue.rings[0] || '#ccc', 12);
+
+            ctx.shadowBlur = 0;
+
+            // Linha de mira
             ctx.strokeStyle = `rgba(255, 245, 120, ${0.75 - power/200})`;
             ctx.lineWidth = 2.2;
             ctx.setLineDash([6, 24]);
@@ -437,6 +615,7 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
+            // Barra de força
             ctx.fillStyle = '#111';
             ctx.fillRect(cueBall.x - 21, cueBall.y - 52, 42, 8);
             ctx.fillStyle = power > 75 ? '#ff4444' : '#ffeb3b';
@@ -459,15 +638,15 @@
             if (!eight || !eight.sunk) return;
 
             const group = playerGroups[currentPlayer];
-            const hasGroupBallsLeft = balls.some(b => 
+            const hasGroupBallsLeft = balls.some(b =>
                 !b.sunk && b.number !== 0 && b.number !== 8 &&
                 ((group === 'solid' && b.number <= 7) || (group === 'stripe' && b.number > 8))
             );
 
             gameWon = true;
             winMessage.style.color = currentPlayer === 1 ? '#4fc3f7' : '#ff9800';
-            winMessage.innerHTML = hasGroupBallsLeft ? 
-                `❌ JOGADOR ${currentPlayer}<br>PERDEU (8 cedo)` : 
+            winMessage.innerHTML = hasGroupBallsLeft ?
+                `❌ JOGADOR ${currentPlayer}<br>PERDEU (8 cedo)` :
                 `🎉 JOGADOR ${currentPlayer}<br>VENCEU!`;
             winMessage.style.display = 'block';
             setTimeout(createBalls, 5200);
@@ -520,10 +699,12 @@
 
         function shoot(x, y) {
             if (!isAiming || !cueBall) return;
+            const cue = cues[selectedCue];
             const dx = cueBall.x - x;
             const dy = cueBall.y - y;
-            cueBall.vx = dx * 0.148;
-            cueBall.vy = dy * 0.148;
+            const basePower = 0.148 * cue.power;
+            cueBall.vx = dx * basePower;
+            cueBall.vy = dy * basePower;
             isAiming = false;
             shotActive = true;
             shotSunkValid = 0;
@@ -563,6 +744,8 @@
             if (e.key.toLowerCase() === 'r') createBalls();
         });
 
+        // Iniciar
+        buildCueButtons();
         createBalls();
         gameLoop();
     </script>
