@@ -169,10 +169,10 @@
             font-weight: 700;
         }
 
-        .rules-btn {
+        .rules-btn, .mode-btn {
             display: block;
             width: 100%;
-            margin-top: 10px;
+            margin-top: 8px;
             padding: 8px 0;
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.1);
@@ -186,10 +186,15 @@
             transition: all 0.2s;
             font-family: inherit;
         }
-        .rules-btn:hover {
+        .rules-btn:hover, .mode-btn:hover {
             background: rgba(79,195,247,0.15);
             border-color: rgba(79,195,247,0.4);
             color: #fff;
+        }
+        .mode-btn.active {
+            background: rgba(255,183,77,0.15);
+            border-color: rgba(255,183,77,0.45);
+            color: #ffb74d;
         }
 
         /* ===== MODAL DE REGRAS ===== */
@@ -384,12 +389,12 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(145deg, rgba(15,15,15,0.95), rgba(30,30,30,0.95));
+            background: linear-gradient(145deg, rgba(15,15,15,0.97), rgba(28,28,32,0.97));
             color: #fff;
-            font-size: 30px;
+            font-size: 28px;
             font-weight: 800;
             text-align: center;
-            padding: 36px 56px;
+            padding: 36px 48px 28px;
             border-radius: 20px;
             display: none;
             z-index: 20;
@@ -400,6 +405,48 @@
             line-height: 1.45;
             letter-spacing: 1px;
             animation: popIn 0.4s ease;
+            min-width: 280px;
+        }
+        #win-message .win-title {
+            margin-bottom: 6px;
+        }
+        #win-message .win-sub {
+            font-size: 14px;
+            font-weight: 500;
+            color: #999;
+            margin-bottom: 22px;
+            letter-spacing: 0.5px;
+        }
+        #win-message .play-again-btn {
+            display: inline-block;
+            padding: 12px 36px;
+            background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+            border: none;
+            border-radius: 12px;
+            color: #0a0a0a;
+            font-size: 15px;
+            font-weight: 800;
+            font-family: inherit;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 20px rgba(79,195,247,0.35);
+        }
+        #win-message .play-again-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 28px rgba(79,195,247,0.5);
+            background: linear-gradient(135deg, #81d4fa, #4fc3f7);
+        }
+        #win-message .play-again-btn:active {
+            transform: translateY(0);
+        }
+        #win-message.loss .play-again-btn {
+            background: linear-gradient(135deg, #ffb74d, #ffa726);
+            box-shadow: 0 4px 20px rgba(255,183,77,0.35);
+        }
+        #win-message.loss .play-again-btn:hover {
+            background: linear-gradient(135deg, #ffcc80, #ffb74d);
+            box-shadow: 0 6px 28px rgba(255,183,77,0.5);
         }
         #foul-message {
             position: absolute;
@@ -456,7 +503,9 @@
 
             <div id="instructions">
                 Arraste da bola branca<br>
+                Após falta: posicione a branca<br>
                 <strong>R</strong> Reiniciar
+                <button class="mode-btn" id="mode-btn">Modo: 2 Jogadores</button>
                 <button class="rules-btn" id="rules-btn">Regras</button>
             </div>
         </div>
@@ -482,7 +531,7 @@
                 <li><strong>Grupos:</strong> Sólidas (1–7) ou Listadas (9–15). Cada jogador fica com um grupo.</li>
                 <li><strong>Objetivo:</strong> encaçapar todas as bolas do seu grupo e depois a bola 8.</li>
                 <li><strong>Bola 8:</strong> só pode ser encaçapada depois que todas as suas bolas já tiverem caído. Se a 8 cair antes, você perde.</li>
-                <li><strong>Falta (FOUL):</strong> encaçapar a bola branca. A vez passa para o adversário e a branca volta à mesa.</li>
+                <li><strong>Falta (FOUL):</strong> encaçapar a bola branca. A vez passa e o adversário recebe <strong>bola na mão</strong> — pode arrastar a branca para qualquer lugar da mesa antes de bater.</li>
                 <li><strong>Turno:</strong> se você encaçapar uma bola válida do seu grupo, joga de novo. Caso contrário, a vez passa.</li>
                 <li><strong>Vitória:</strong> encaçapar a bola 8 legalmente após limpar o seu grupo.</li>
             </ol>
@@ -571,6 +620,10 @@
         let shotCueSunk = false;
         let shotEightSunk = false;
         let sunkBallList = []; // números das bolas que caíram no tubo
+        let ballInHand = false;   // bola na mão após falta
+        let isPlacing = false;    // arrastando a branca para posicionar
+        let vsCPU = false;        // modo contra o computador
+        let cpuThinking = false;  // CPU está "pensando"/jogando
 
         const pockets = [
             {x: BORDER, y: BORDER}, {x: W/2, y: BORDER}, {x: W - BORDER, y: BORDER},
@@ -685,6 +738,9 @@
             shotSunkValid = 0;
             shotCueSunk = false;
             shotEightSunk = false;
+            ballInHand = false;
+            isPlacing = false;
+            cpuThinking = false;
             winMessage.style.display = 'none';
             foulMessage.style.display = 'none';
             updateBallTube();
@@ -710,13 +766,245 @@
         function updateUI() {
             document.getElementById('balls-left').textContent = 7 - sunkBalls;
             const playerEl = document.getElementById('current-player');
-            playerEl.textContent = `Jogador ${currentPlayer}`;
+            if (vsCPU && currentPlayer === 2) {
+                playerEl.textContent = cpuThinking ? 'CPU pensando…' : 'CPU';
+            } else {
+                playerEl.textContent = vsCPU ? 'Você' : `Jogador ${currentPlayer}`;
+            }
             playerEl.style.color = currentPlayer === 1 ? '#4fc3f7' : '#ffb74d';
             const groupEl = document.getElementById('group-info');
-            const group = playerGroups[currentPlayer];
-            groupEl.textContent = group ?
-                (group === 'solid' ? '● Sólidas' : '▥ Listadas') :
-                'Mesa Aberta';
+            if (ballInHand && !(vsCPU && currentPlayer === 2)) {
+                groupEl.textContent = '✋ Bola na mão';
+                groupEl.style.color = '#ffb74d';
+            } else {
+                const group = playerGroups[currentPlayer];
+                groupEl.textContent = group ?
+                    (group === 'solid' ? '● Sólidas' : '▥ Listadas') :
+                    'Mesa Aberta';
+                groupEl.style.color = '#999';
+            }
+        }
+
+        function isCPUTurn() {
+            return vsCPU && currentPlayer === 2 && !gameWon;
+        }
+
+        // ===== IA DO CPU =====
+        function getCPUTargets() {
+            const group = playerGroups[2];
+            let ownLeft = balls.filter(b =>
+                !b.sunk && b.number !== 0 && b.number !== 8 &&
+                ((group === 'solid' && b.number <= 7) ||
+                 (group === 'stripe' && b.number > 8) ||
+                 (!group))
+            );
+            // mesa só tem sólidas (1–7): se o grupo for listadas e não houver nenhuma, usa as sólidas restantes
+            if (group === 'stripe' && ownLeft.length === 0) {
+                ownLeft = balls.filter(b => !b.sunk && b.number >= 1 && b.number <= 7);
+            }
+            // limpou o grupo → mira a 8
+            if (group && ownLeft.length === 0) {
+                const eight = balls.find(b => b.number === 8 && !b.sunk);
+                return eight ? [eight] : [];
+            }
+            // se ainda não tem grupo e não sobrou bola de objeto, também mira a 8
+            if (!group && ownLeft.length === 0) {
+                const eight = balls.find(b => b.number === 8 && !b.sunk);
+                return eight ? [eight] : [];
+            }
+            return ownLeft;
+        }
+
+        function scoreShot(cue, target, pocket) {
+            // vetor bola → caçapa
+            const toPx = pocket.x - target.x;
+            const toPy = pocket.y - target.y;
+            const toPLen = Math.hypot(toPx, toPy);
+            if (toPLen < 1) return -1;
+
+            const dirPX = toPx / toPLen;
+            const dirPY = toPy / toPLen;
+
+            // posição da ghost ball (onde a branca deve estar no contato)
+            const ghostX = target.x - dirPX * (BALL_RADIUS * 2);
+            const ghostY = target.y - dirPY * (BALL_RADIUS * 2);
+
+            // direção da branca até a ghost
+            const toGX = ghostX - cue.x;
+            const toGY = ghostY - cue.y;
+            const toGLen = Math.hypot(toGX, toGY);
+            if (toGLen < BALL_RADIUS * 2) return -1;
+
+            const dirGX = toGX / toGLen;
+            const dirGY = toGY / toGLen;
+
+            // caminho livre branca → ghost?
+            for (const b of balls) {
+                if (b.sunk || b === cue || b === target) continue;
+                const proj = (b.x - cue.x) * dirGX + (b.y - cue.y) * dirGY;
+                if (proj <= 0 || proj >= toGLen) continue;
+                const cx = cue.x + dirGX * proj;
+                const cy = cue.y + dirGY * proj;
+                if (Math.hypot(b.x - cx, b.y - cy) < BALL_RADIUS * 2 - 1) return -1;
+            }
+
+            // caminho livre target → pocket?
+            for (const b of balls) {
+                if (b.sunk || b === target || b === cue) continue;
+                const proj = (b.x - target.x) * dirPX + (b.y - target.y) * dirPY;
+                if (proj <= 0 || proj >= toPLen) continue;
+                const cx = target.x + dirPX * proj;
+                const cy = target.y + dirPY * proj;
+                if (Math.hypot(b.x - cx, b.y - cy) < BALL_RADIUS * 2 - 1) return -1;
+            }
+
+            // ângulo de corte (1 = cheio, 0 = muito fino)
+            const cut = Math.max(0, dirGX * dirPX + dirGY * dirPY);
+            if (cut < 0.15) return -1; // corte impossível demais
+
+            // score: prefere bolas perto da caçapa, corte bom, distância razoável
+            const distScore = 1 / (1 + toPLen / 200);
+            const cutScore = cut;
+            const approachScore = 1 / (1 + toGLen / 300);
+            return distScore * 2 + cutScore * 1.5 + approachScore;
+        }
+
+        function findBestCPUShot() {
+            if (!cueBall || cueBall.sunk) return null;
+            const targets = getCPUTargets();
+            if (targets.length === 0) return null;
+
+            let best = null;
+            let bestScore = -1;
+
+            for (const target of targets) {
+                for (const pocket of pockets) {
+                    const s = scoreShot(cueBall, target, pocket);
+                    if (s > bestScore) {
+                        bestScore = s;
+                        // direção: da branca para a ghost ball
+                        const toPx = pocket.x - target.x;
+                        const toPy = pocket.y - target.y;
+                        const toPLen = Math.hypot(toPx, toPy) || 1;
+                        const dirPX = toPx / toPLen;
+                        const dirPY = toPy / toPLen;
+                        const ghostX = target.x - dirPX * (BALL_RADIUS * 2);
+                        const ghostY = target.y - dirPY * (BALL_RADIUS * 2);
+                        const dx = ghostX - cueBall.x;
+                        const dy = ghostY - cueBall.y;
+                        const dist = Math.hypot(dx, dy) || 1;
+                        // potência baseada na distância total
+                        const power = Math.min(95, 35 + toPLen * 0.12 + dist * 0.08);
+                        best = {
+                            dirX: dx / dist,
+                            dirY: dy / dist,
+                            power,
+                            score: s
+                        };
+                    }
+                }
+            }
+
+            // se não achou tacada boa, empurra a bola mais próxima do grupo
+            if (!best && targets.length > 0) {
+                let nearest = targets[0];
+                let nDist = Math.hypot(nearest.x - cueBall.x, nearest.y - cueBall.y);
+                for (const t of targets) {
+                    const d = Math.hypot(t.x - cueBall.x, t.y - cueBall.y);
+                    if (d < nDist) { nearest = t; nDist = d; }
+                }
+                const dx = nearest.x - cueBall.x;
+                const dy = nearest.y - cueBall.y;
+                const dist = Math.hypot(dx, dy) || 1;
+                best = {
+                    dirX: dx / dist,
+                    dirY: dy / dist,
+                    power: 50 + Math.random() * 25,
+                    score: 0
+                };
+            }
+
+            // erro humano da CPU (não é perfeita)
+            if (best) {
+                const err = (0.04 + Math.random() * 0.06) * (best.score < 1.5 ? 1.8 : 1);
+                const angle = Math.atan2(best.dirY, best.dirX) + (Math.random() - 0.5) * err;
+                best.dirX = Math.cos(angle);
+                best.dirY = Math.sin(angle);
+                best.power *= 0.9 + Math.random() * 0.2;
+            }
+            return best;
+        }
+
+        function cpuPlaceCueBall() {
+            // tenta posições boas na área de saque / centro esquerdo
+            const candidates = [];
+            for (let i = 0; i < 25; i++) {
+                const x = BORDER + BALL_RADIUS + 20 + Math.random() * 280;
+                const y = BORDER + BALL_RADIUS + 20 + Math.random() * (H - BORDER * 2 - BALL_RADIUS * 2 - 40);
+                if (isValidCuePosition(x, y)) candidates.push({x, y});
+            }
+            if (candidates.length === 0) {
+                placeCueBall(230, H / 2);
+                return;
+            }
+            // prefere perto do centro da área esquerda
+            candidates.sort((a, b) => Math.hypot(a.x - 250, a.y - H/2) - Math.hypot(b.x - 250, b.y - H/2));
+            placeCueBall(candidates[0].x, candidates[0].y);
+        }
+
+        function cpuShoot() {
+            if (!isCPUTurn() || shotActive || gameWon || !cueBall) {
+                cpuThinking = false;
+                updateUI();
+                return;
+            }
+
+            if (ballInHand) {
+                cpuPlaceCueBall();
+                ballInHand = false;
+                isPlacing = false;
+                updateUI();
+            }
+
+            const shot = findBestCPUShot();
+            if (!shot) {
+                // tacada aleatória fraca pra frente
+                const angle = (Math.random() - 0.5) * 0.8;
+                cueBall.vx = Math.cos(angle) * 8;
+                cueBall.vy = Math.sin(angle) * 8;
+            } else {
+                // converte power (0-100) no mesmo sistema do jogador
+                // player: basePower = 0.148 * cue.power, vx = dx * basePower onde dx ~ até ~480
+                // então velocidade típica ~ power_visual * 0.148 * factor
+                const cue = cues[selectedCue];
+                const speed = shot.power * 0.72 * cue.power;
+                cueBall.vx = shot.dirX * speed;
+                cueBall.vy = shot.dirY * speed;
+            }
+
+            cpuThinking = false;
+            shotActive = true;
+            shotSunkValid = 0;
+            shotCueSunk = false;
+            shotEightSunk = false;
+            isAiming = false;
+            updateUI();
+        }
+
+        function scheduleCPUTurn() {
+            if (!isCPUTurn() || gameWon || shotActive) return;
+            cpuThinking = true;
+            updateUI();
+            // delay “pensando”
+            const delay = ballInHand ? 900 + Math.random() * 500 : 700 + Math.random() * 900;
+            setTimeout(() => {
+                if (isCPUTurn() && !shotActive && !gameWon) {
+                    cpuShoot();
+                } else {
+                    cpuThinking = false;
+                    updateUI();
+                }
+            }, delay);
         }
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1184,12 +1472,29 @@
             );
 
             gameWon = true;
-            winMessage.style.color = currentPlayer === 1 ? '#4fc3f7' : '#ffb74d';
-            winMessage.innerHTML = hasGroupBallsLeft ?
-                `❌ JOGADOR ${currentPlayer}<br>PERDEU (8 cedo)` :
-                `🎉 JOGADOR ${currentPlayer}<br>VENCEU!`;
+            const isLoss = hasGroupBallsLeft;
+            const color = currentPlayer === 1 ? '#4fc3f7' : '#ffb74d';
+            let name;
+            if (vsCPU) {
+                name = currentPlayer === 1 ? 'VOCÊ' : 'CPU';
+            } else {
+                name = `JOGADOR ${currentPlayer}`;
+            }
+
+            winMessage.className = isLoss ? 'loss' : '';
+            winMessage.style.color = color;
+            winMessage.innerHTML = isLoss
+                ? `<div class="win-title">❌ ${name}</div>
+                   <div class="win-sub">Perdeu — bola 8 encaçapada cedo</div>
+                   <button class="play-again-btn" id="play-again-btn">Jogar de novo</button>`
+                : `<div class="win-title">🎉 ${name}</div>
+                   <div class="win-sub">Venceu a partida!</div>
+                   <button class="play-again-btn" id="play-again-btn">Jogar de novo</button>`;
             winMessage.style.display = 'block';
-            setTimeout(createBalls, 5200);
+
+            document.getElementById('play-again-btn').addEventListener('click', () => {
+                createBalls();
+            });
         }
 
         function endShot() {
@@ -1199,6 +1504,14 @@
             if (shotCueSunk) {
                 showFoul();
                 switchPlayer();
+                // Adversário recebe bola na mão
+                ballInHand = true;
+                isPlacing = false;
+                if (cueBall) {
+                    cueBall.sunk = false;
+                    placeCueBall(230, H / 2);
+                }
+                updateUI();
             } else if (shotSunkValid === 0) {
                 switchPlayer();
             }
@@ -1207,6 +1520,56 @@
             shotSunkValid = 0;
             shotCueSunk = false;
             shotEightSunk = false;
+
+            // Se for a vez da CPU, ela joga
+            if (!gameWon && isCPUTurn()) {
+                scheduleCPUTurn();
+            }
+        }
+
+        function isValidCuePosition(x, y) {
+            // dentro da mesa
+            if (x - BALL_RADIUS < BORDER || x + BALL_RADIUS > W - BORDER) return false;
+            if (y - BALL_RADIUS < BORDER || y + BALL_RADIUS > H - BORDER) return false;
+            // longe das caçapas
+            for (const p of pockets) {
+                if (Math.hypot(x - p.x, y - p.y) < POCKET_RADIUS + BALL_RADIUS - 2) return false;
+            }
+            // sem sobrepor outras bolas
+            for (const b of balls) {
+                if (b.sunk || b === cueBall) continue;
+                if (Math.hypot(x - b.x, y - b.y) < BALL_RADIUS * 2 + 1) return false;
+            }
+            return true;
+        }
+
+        function placeCueBall(x, y) {
+            if (!cueBall) return;
+            // se a posição for inválida, tenta manter a anterior ou busca próxima válida
+            if (isValidCuePosition(x, y)) {
+                cueBall.x = x;
+                cueBall.y = y;
+            } else {
+                // tenta posição mais próxima válida (pequena busca)
+                let best = null, bestD = Infinity;
+                for (let a = 0; a < 360; a += 15) {
+                    for (let r = 0; r <= 40; r += 8) {
+                        const px = x + Math.cos(a * Math.PI / 180) * r;
+                        const py = y + Math.sin(a * Math.PI / 180) * r;
+                        if (isValidCuePosition(px, py)) {
+                            const d = Math.hypot(px - x, py - y);
+                            if (d < bestD) { bestD = d; best = {x: px, y: py}; }
+                        }
+                    }
+                }
+                if (best) {
+                    cueBall.x = best.x;
+                    cueBall.y = best.y;
+                }
+            }
+            cueBall.vx = 0;
+            cueBall.vy = 0;
+            cueBall.sunk = false;
         }
 
         function gameLoop() {
@@ -1222,6 +1585,7 @@
             checkPockets();
 
             if (isAiming) drawCueStick();
+            if (ballInHand && cueBall && !cueBall.sunk && !isCPUTurn() && !cpuThinking) drawBallInHandHint();
 
             if (shotActive && allBallsStopped() && !gameWon) {
                 endShot();
@@ -1230,8 +1594,38 @@
             requestAnimationFrame(gameLoop);
         }
 
+        function drawBallInHandHint() {
+            if (!cueBall) return;
+            const t = Date.now() / 400;
+            const pulse = 0.4 + Math.sin(t) * 0.25;
+
+            // anel pulsante
+            ctx.beginPath();
+            ctx.arc(cueBall.x, cueBall.y, BALL_RADIUS + 8 + Math.sin(t) * 3, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 183, 77, ${pulse})`;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(cueBall.x, cueBall.y, BALL_RADIUS + 14 + Math.sin(t) * 2, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 183, 77, ${pulse * 0.5})`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // texto
+            ctx.font = 'bold 13px Outfit, Arial';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = `rgba(255, 200, 100, ${0.7 + Math.sin(t) * 0.2})`;
+            ctx.fillText('Arraste a branca', cueBall.x, cueBall.y - BALL_RADIUS - 22);
+            ctx.font = '11px Outfit, Arial';
+            ctx.fillStyle = `rgba(200, 200, 200, ${0.5 + Math.sin(t) * 0.15})`;
+            ctx.fillText('depois mire e bata', cueBall.x, cueBall.y - BALL_RADIUS - 8);
+        }
+
         function startAim(x, y) {
             if (gameWon || !cueBall || !allBallsStopped() || cueBall.sunk || shotActive) return;
+            if (cpuThinking || isCPUTurn()) return; // não deixa o jogador mirar na vez da CPU
+            if (ballInHand) return; // precisa terminar de posicionar / começar mira só após soltar
             isAiming = true;
             aimStartX = x;
             aimStartY = y;
@@ -1246,36 +1640,85 @@
             cueBall.vx = dx * basePower;
             cueBall.vy = dy * basePower;
             isAiming = false;
+            ballInHand = false;
+            isPlacing = false;
             shotActive = true;
             shotSunkValid = 0;
             shotCueSunk = false;
             shotEightSunk = false;
+            updateUI();
+        }
+
+        function pointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX ?? e.touches?.[0]?.clientX ?? e.changedTouches?.[0]?.clientX;
+            const clientY = e.clientY ?? e.touches?.[0]?.clientY ?? e.changedTouches?.[0]?.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
         }
 
         ['mousedown', 'touchstart'].forEach(ev => {
             canvas.addEventListener(ev, e => {
                 e.preventDefault();
-                const rect = canvas.getBoundingClientRect();
-                const x = (e.clientX || e.touches[0].clientX) - rect.left;
-                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                const { x, y } = pointerPos(e);
+
+                if (cpuThinking || isCPUTurn()) return;
+
+                // Modo bola na mão: se clicou perto da branca → arrastar
+                if (ballInHand && cueBall && !cueBall.sunk && allBallsStopped()) {
+                    const dist = Math.hypot(x - cueBall.x, y - cueBall.y);
+                    if (dist < BALL_RADIUS + 18) {
+                        isPlacing = true;
+                        isAiming = false;
+                        placeCueBall(x, y);
+                        return;
+                    }
+                    // clicou longe da branca → começa a mirar (confirma posição)
+                    ballInHand = false;
+                    isPlacing = false;
+                    updateUI();
+                    startAim(x, y);
+                    return;
+                }
+
                 startAim(x, y);
             }, { passive: false });
         });
 
-        canvas.addEventListener('mousemove', e => {
-            if (!isAiming) return;
-            const rect = canvas.getBoundingClientRect();
-            aimStartX = e.clientX - rect.left;
-            aimStartY = e.clientY - rect.top;
-        });
+        function onPointerMove(e) {
+            const { x, y } = pointerPos(e);
+
+            if (isPlacing && ballInHand && cueBall) {
+                placeCueBall(x, y);
+                return;
+            }
+
+            if (isAiming) {
+                aimStartX = x;
+                aimStartY = y;
+            }
+        }
+
+        canvas.addEventListener('mousemove', onPointerMove);
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            onPointerMove(e);
+        }, { passive: false });
 
         ['mouseup', 'touchend'].forEach(ev => {
             canvas.addEventListener(ev, e => {
                 e.preventDefault();
+
+                if (isPlacing) {
+                    // soltou a branca — continua em bola na mão até mirar
+                    isPlacing = false;
+                    return;
+                }
+
                 if (!isAiming) return;
-                const rect = canvas.getBoundingClientRect();
-                const x = (e.clientX || e.changedTouches[0].clientX) - rect.left;
-                const y = (e.clientY || e.changedTouches[0].clientY) - rect.top;
+                const { x, y } = pointerPos(e);
                 shoot(x, y);
             }, { passive: false });
         });
@@ -1285,6 +1728,15 @@
             if (e.key === 'Escape') {
                 document.getElementById('rules-overlay').classList.remove('show');
             }
+        });
+
+        // Modo 2 jogadores / vs CPU
+        document.getElementById('mode-btn').addEventListener('click', () => {
+            vsCPU = !vsCPU;
+            const btn = document.getElementById('mode-btn');
+            btn.textContent = vsCPU ? 'Modo: vs CPU' : 'Modo: 2 Jogadores';
+            btn.classList.toggle('active', vsCPU);
+            createBalls(); // reinicia a partida ao trocar de modo
         });
 
         // Modal de regras
