@@ -169,6 +169,100 @@
             font-weight: 700;
         }
 
+        .rules-btn {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px 0;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #aaa;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .rules-btn:hover {
+            background: rgba(79,195,247,0.15);
+            border-color: rgba(79,195,247,0.4);
+            color: #fff;
+        }
+
+        /* ===== MODAL DE REGRAS ===== */
+        #rules-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+        #rules-overlay.show {
+            display: flex;
+        }
+        #rules-modal {
+            background: linear-gradient(160deg, #1a1a1e 0%, #121216 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 18px;
+            padding: 28px 32px 24px;
+            max-width: 420px;
+            width: 92%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+            animation: popIn 0.3s ease;
+            color: #ddd;
+        }
+        #rules-modal h3 {
+            font-size: 18px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 18px;
+            letter-spacing: 1.5px;
+            background: linear-gradient(135deg, #4fc3f7, #81c784);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        #rules-modal ol {
+            padding-left: 20px;
+            margin-bottom: 16px;
+        }
+        #rules-modal li {
+            font-size: 13px;
+            line-height: 1.55;
+            margin-bottom: 10px;
+            color: #bbb;
+        }
+        #rules-modal li strong {
+            color: #eee;
+        }
+        #rules-modal .close-rules {
+            display: block;
+            width: 100%;
+            margin-top: 8px;
+            padding: 10px;
+            background: rgba(79,195,247,0.15);
+            border: 1px solid rgba(79,195,247,0.35);
+            border-radius: 10px;
+            color: #4fc3f7;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+        #rules-modal .close-rules:hover {
+            background: rgba(79,195,247,0.25);
+            color: #fff;
+        }
+
         .table-area {
             display: flex;
             align-items: stretch;
@@ -363,6 +457,7 @@
             <div id="instructions">
                 Arraste da bola branca<br>
                 <strong>R</strong> Reiniciar
+                <button class="rules-btn" id="rules-btn">Regras</button>
             </div>
         </div>
 
@@ -376,6 +471,22 @@
                 <span class="tube-label">Tubo</span>
                 <div id="sunk-balls"></div>
             </div>
+        </div>
+    </div>
+
+    <div id="rules-overlay">
+        <div id="rules-modal">
+            <h3>REGRAS — SINUCA 8 BOLAS</h3>
+            <ol>
+                <li><strong>Mesa aberta:</strong> no início qualquer bola (exceto a 8) pode ser encaçapada. Quem encaçapá a primeira define o grupo.</li>
+                <li><strong>Grupos:</strong> Sólidas (1–7) ou Listadas (9–15). Cada jogador fica com um grupo.</li>
+                <li><strong>Objetivo:</strong> encaçapar todas as bolas do seu grupo e depois a bola 8.</li>
+                <li><strong>Bola 8:</strong> só pode ser encaçapada depois que todas as suas bolas já tiverem caído. Se a 8 cair antes, você perde.</li>
+                <li><strong>Falta (FOUL):</strong> encaçapar a bola branca. A vez passa para o adversário e a branca volta à mesa.</li>
+                <li><strong>Turno:</strong> se você encaçapar uma bola válida do seu grupo, joga de novo. Caso contrário, a vez passa.</li>
+                <li><strong>Vitória:</strong> encaçapar a bola 8 legalmente após limpar o seu grupo.</li>
+            </ol>
+            <button class="close-rules" id="close-rules">Fechar</button>
         </div>
     </div>
 
@@ -1171,6 +1282,22 @@
 
         document.addEventListener('keydown', e => {
             if (e.key.toLowerCase() === 'r') createBalls();
+            if (e.key === 'Escape') {
+                document.getElementById('rules-overlay').classList.remove('show');
+            }
+        });
+
+        // Modal de regras
+        document.getElementById('rules-btn').addEventListener('click', () => {
+            document.getElementById('rules-overlay').classList.add('show');
+        });
+        document.getElementById('close-rules').addEventListener('click', () => {
+            document.getElementById('rules-overlay').classList.remove('show');
+        });
+        document.getElementById('rules-overlay').addEventListener('click', e => {
+            if (e.target.id === 'rules-overlay') {
+                e.target.classList.remove('show');
+            }
         });
 
         buildCueButtons();
