@@ -1596,9 +1596,9 @@
             </div>
             <div class="online-info">
                 Jogue com um amigo em outro computador.<br>
-                Um <strong>cria a sala</strong> e o outro <strong>entra com o código</strong>.<br>
+                1) Um clica <strong>Criar sala</strong> e manda o código<br>
+                2) O outro clica <strong>Entrar na sala</strong> e digita o código<br>
                 <span style="color:#fbbf24;">Os dois precisam de internet.</span>
-                Prefira abrir o jogo por um link http (não arquivo local).
             </div>
             <div class="online-status" id="online-status">Escolha uma opção</div>
             <div class="online-code-box" id="online-code-box" style="display:none;">
@@ -1754,7 +1754,7 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
     <script>
         // ===== LOGIN + PERFIL (moedas, tacos, extras) =====
         let playerName = 'Jogador';
@@ -1916,35 +1916,32 @@
             menuScreen.classList.remove('hidden');
         });
 
-        // ===== ONLINE MULTIPLAYER (PeerJS) =====
+        // ===== ONLINE MULTIPLAYER (MQTT — broker público) =====
         let onlineMode = false;
         let isHost = false;
         let myPlayerNum = 1;
-        let onlinePeer = null;
-        let onlineConn = null;
+        let mqttClient = null;
         let opponentName = 'Oponente';
         let roomCode = '';
+        let myClientId = '';
+        let hostHeartbeat = null;
+        let waitingForOpponent = false;
 
-        const PEER_CONFIG = {
-            host: '0.peerjs.com',
-            port: 443,
-            path: '/',
-            secure: true,
-            debug: 1,
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun.cloudflare.com:3478' }
-                ]
-            }
-        };
+        const MQTT_URLS = [
+            'wss://broker.emqx.io:8084/mqtt',
+            'wss://test.mosquitto.org:8081/mqtt',
+            'wss://broker.hivemq.com:8884/mqtt'
+        ];
 
         function genRoomCode() {
-            const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let code = '';
             for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
             return code;
+        }
+
+        function roomTopic(code) {
+            return 'sinuca8bolas/room/' + (code || roomCode).toUpperCase();
         }
 
         function setOnlineStatus(msg) {
@@ -1963,12 +1960,9 @@
         }
 
         function openOnline() {
-            if (typeof Peer === 'undefined') {
-                alert('Biblioteca online não carregou. Verifique a internet e recarregue a página (F5).');
+            if (typeof mqtt === 'undefined') {
+                alert('Biblioteca online não carregou. Verifique a internet e recarregue (F5).');
                 return;
-            }
-            if (location.protocol === 'file:') {
-                setOnlineStatus('⚠️ Abra via http:// (não use arquivo local)');
             }
             resetOnlineUI();
             document.getElementById('online-overlay').classList.add('show');
@@ -1980,20 +1974,39 @@
         }
 
         function disconnectOnline() {
-            try { if (onlineConn) onlineConn.close(); } catch (e) {}
-            try { if (onlinePeer) onlinePeer.destroy(); } catch (e) {}
-            onlineConn = null;
-            onlinePeer = null;
+            waitingForOpponent = false;
+            if (hostHeartbeat) {
+                clearInterval(hostHeartbeat);
+                hostHeartbeat = null;
+            }
+            try {
+                if (mqttClient) {
+                    if (roomCode) {
+                        try {
+                            mqttClient.publish(roomTopic(), JSON.stringify({
+                                type: 'leave', from: myClientId, name: playerName
+                            }));
+                        } catch (e) {}
+                    }
+                    mqttClient.end(true);
+                }
+            } catch (e) {}
+            mqttClient = null;
             onlineMode = false;
             isHost = false;
             myPlayerNum = 1;
             opponentName = 'Oponente';
             roomCode = '';
+            myClientId = '';
         }
 
         function sendOnline(data) {
-            if (onlineConn && onlineConn.open) {
-                try { onlineConn.send(data); } catch (e) { console.warn('send fail', e); }
+            if (!mqttClient || !mqttClient.connected || !roomCode) return;
+            const payload = Object.assign({ from: myClientId }, data);
+            try {
+                mqttClient.publish(roomTopic(), JSON.stringify(payload), { qos: 0 });
+            } catch (e) {
+                console.warn('MQTT publish fail', e);
             }
         }
 
@@ -2001,6 +2014,11 @@
             onlineMode = true;
             vsCPU = false;
             tournamentActive = false;
+            waitingForOpponent = false;
+            if (hostHeartbeat) {
+                clearInterval(hostHeartbeat);
+                hostHeartbeat = null;
+            }
             document.getElementById('online-overlay').classList.remove('show');
             menuScreen.classList.add('hidden');
             gameContainer.classList.add('visible');
@@ -2009,51 +2027,56 @@
             if (typeof showToast === 'function') showToast('Partida online iniciada!');
         }
 
-        function onConnectionReady() {
-            setOnlineStatus('Conectado! Iniciando…');
-            sendOnline({ type: 'hello', name: playerName });
-            if (isHost) {
-                setTimeout(() => {
-                    startOnlineMatch();
-                    sendOnline({ type: 'start', name: playerName });
-                }, 500);
-            }
-        }
-
-        function setupConnection(conn) {
-            onlineConn = conn;
-            conn.on('data', (data) => handleOnlineData(data));
-            conn.on('close', () => {
-                if (onlineMode) {
-                    onlineMode = false;
-                    if (typeof showToast === 'function') showToast('Oponente desconectou');
-                    gameContainer.classList.remove('visible');
-                    menuScreen.classList.remove('hidden');
-                }
-                disconnectOnline();
-            });
-            conn.on('error', (err) => {
-                console.warn('conn error', err);
-                setOnlineStatus('Erro na conexão com o oponente');
-            });
-            if (conn.open) {
-                onConnectionReady();
-            } else {
-                conn.on('open', onConnectionReady);
-            }
-        }
-
         function handleOnlineData(data) {
             if (!data || !data.type) return;
+            // ignora próprias mensagens
+            if (data.from && data.from === myClientId) return;
 
-            if (data.type === 'hello') {
+            if (data.type === 'ping' && !isHost) {
+                // guest responde ao host
+                sendOnline({ type: 'pong', name: playerName });
+                return;
+            }
+
+            if (data.type === 'pong' && isHost && waitingForOpponent) {
                 opponentName = data.name || 'Oponente';
-                if (typeof updateUI === 'function') updateUI();
+                setOnlineStatus('Oponente encontrado: ' + opponentName);
+                waitingForOpponent = false;
+                sendOnline({ type: 'start', name: playerName });
+                setTimeout(() => startOnlineMatch(), 300);
+                return;
+            }
+
+            if (data.type === 'join' && isHost && waitingForOpponent) {
+                opponentName = data.name || 'Oponente';
+                setOnlineStatus('Oponente entrou: ' + opponentName);
+                waitingForOpponent = false;
+                sendOnline({ type: 'welcome', name: playerName });
+                sendOnline({ type: 'start', name: playerName });
+                setTimeout(() => startOnlineMatch(), 300);
+                return;
+            }
+
+            if (data.type === 'welcome' && !isHost) {
+                opponentName = data.name || 'Oponente';
+                return;
             }
 
             if (data.type === 'start') {
                 opponentName = data.name || opponentName;
                 startOnlineMatch();
+                return;
+            }
+
+            if (data.type === 'leave') {
+                if (onlineMode) {
+                    onlineMode = false;
+                    if (typeof showToast === 'function') showToast('Oponente saiu');
+                    gameContainer.classList.remove('visible');
+                    menuScreen.classList.remove('hidden');
+                }
+                disconnectOnline();
+                return;
             }
 
             if (data.type === 'shot') {
@@ -2068,6 +2091,7 @@
                 shotCueSunk = false;
                 shotEightSunk = false;
                 if (typeof updateUI === 'function') updateUI();
+                return;
             }
 
             if (data.type === 'place') {
@@ -2078,6 +2102,7 @@
                     cueBall.vy = 0;
                     cueBall.sunk = false;
                 }
+                return;
             }
 
             if (data.type === 'sync') {
@@ -2096,6 +2121,7 @@
                 if (typeof data.sunkBalls === 'number') sunkBalls = data.sunkBalls;
                 if (typeof updateUI === 'function') updateUI();
                 if (typeof updateBallsStatus === 'function') updateBallsStatus();
+                return;
             }
 
             if (data.type === 'restart') {
@@ -2108,53 +2134,96 @@
             return currentPlayer === myPlayerNum;
         }
 
+        function connectMqtt(onReady, onFail) {
+            if (typeof mqtt === 'undefined') {
+                onFail && onFail('MQTT não carregou');
+                return;
+            }
+            myClientId = 's8_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+            let urlIndex = 0;
+            let client = null;
+
+            function tryUrl() {
+                if (urlIndex >= MQTT_URLS.length) {
+                    onFail && onFail('Não conectou a nenhum servidor. Verifique a internet.');
+                    return;
+                }
+                const url = MQTT_URLS[urlIndex++];
+                setOnlineStatus('Conectando servidor ' + urlIndex + '/' + MQTT_URLS.length + '…');
+                try {
+                    if (client) {
+                        try { client.end(true); } catch (e) {}
+                    }
+                    client = mqtt.connect(url, {
+                        clientId: myClientId,
+                        clean: true,
+                        connectTimeout: 8000,
+                        reconnectPeriod: 0
+                    });
+                    mqttClient = client;
+
+                    const failTimer = setTimeout(() => {
+                        try { client.end(true); } catch (e) {}
+                        tryUrl();
+                    }, 9000);
+
+                    client.on('connect', () => {
+                        clearTimeout(failTimer);
+                        console.log('MQTT connected', url);
+                        onReady && onReady(client);
+                    });
+                    client.on('error', (err) => {
+                        console.warn('MQTT error', err);
+                    });
+                    client.on('close', () => {
+                        // se ainda não conectou, o timeout cuida
+                    });
+                    client.on('message', (topic, payload) => {
+                        try {
+                            const data = JSON.parse(payload.toString());
+                            handleOnlineData(data);
+                        } catch (e) {}
+                    });
+                } catch (e) {
+                    console.warn(e);
+                    tryUrl();
+                }
+            }
+            tryUrl();
+        }
+
         function hostOnline() {
             disconnectOnline();
             roomCode = genRoomCode();
             isHost = true;
             myPlayerNum = 1;
+            waitingForOpponent = true;
             setOnlineStatus('Criando sala…');
             document.getElementById('online-actions').style.display = 'none';
             document.getElementById('online-waiting').style.display = 'flex';
             document.getElementById('online-code-box').style.display = 'block';
-            document.getElementById('online-code').textContent = roomCode.toUpperCase();
+            document.getElementById('online-code').textContent = roomCode;
 
-            const peerId = 'sinuca' + roomCode;
-
-            try {
-                onlinePeer = new Peer(peerId, PEER_CONFIG);
-
-                onlinePeer.on('open', (id) => {
-                    console.log('Host peer open:', id);
-                    setOnlineStatus('Sala pronta! Aguardando oponente…');
-                    document.getElementById('online-code').textContent = roomCode.toUpperCase();
-                });
-
-                onlinePeer.on('connection', (conn) => {
-                    console.log('Incoming connection');
-                    setupConnection(conn);
-                });
-
-                onlinePeer.on('error', (err) => {
-                    console.warn('Host peer error:', err);
-                    if (err.type === 'unavailable-id') {
-                        setOnlineStatus('Código em uso, gerando outro…');
-                        setTimeout(hostOnline, 300);
-                    } else if (err.type === 'peer-unavailable') {
-                        setOnlineStatus('Erro de rede do servidor PeerJS');
-                    } else {
-                        setOnlineStatus('Erro: ' + (err.type || err.message || 'falha'));
+            connectMqtt((client) => {
+                client.subscribe(roomTopic(), (err) => {
+                    if (err) {
+                        setOnlineStatus('Erro ao entrar na sala');
+                        return;
                     }
+                    setOnlineStatus('Sala pronta! Aguardando oponente…');
+                    // ping periódico para o guest achar a sala
+                    hostHeartbeat = setInterval(() => {
+                        if (waitingForOpponent) {
+                            sendOnline({ type: 'ping', name: playerName });
+                        }
+                    }, 2000);
+                    sendOnline({ type: 'ping', name: playerName });
                 });
-
-                onlinePeer.on('disconnected', () => {
-                    setOnlineStatus('Desconectado do servidor, reconectando…');
-                    try { onlinePeer.reconnect(); } catch (e) {}
-                });
-            } catch (e) {
-                console.error(e);
-                setOnlineStatus('Falha ao iniciar: ' + e.message);
-            }
+            }, (msg) => {
+                setOnlineStatus(msg || 'Falha ao criar sala');
+                document.getElementById('online-waiting').style.display = 'none';
+                document.getElementById('online-actions').style.display = 'flex';
+            });
         }
 
         function showJoinUI() {
@@ -2168,7 +2237,7 @@
         }
 
         function joinOnline() {
-            const code = (document.getElementById('online-join-input').value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+            const code = (document.getElementById('online-join-input').value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
             if (code.length < 6) {
                 setOnlineStatus('Digite o código completo (6 caracteres)');
                 return;
@@ -2177,74 +2246,33 @@
             isHost = false;
             myPlayerNum = 2;
             roomCode = code;
-            setOnlineStatus('Conectando à sala ' + code.toUpperCase() + '…');
+            setOnlineStatus('Conectando à sala ' + code + '…');
             document.getElementById('online-join-confirm').style.display = 'none';
 
-            const hostId = 'sinuca' + code;
-            let attempts = 0;
-            const maxAttempts = 3;
-
-            function tryConnect() {
-                attempts++;
-                try {
-                    if (onlinePeer) {
-                        try { onlinePeer.destroy(); } catch (e) {}
+            connectMqtt((client) => {
+                client.subscribe(roomTopic(code), (err) => {
+                    if (err) {
+                        setOnlineStatus('Erro ao entrar na sala');
+                        document.getElementById('online-join-confirm').style.display = 'flex';
+                        return;
                     }
-                    onlinePeer = new Peer(PEER_CONFIG);
-
-                    onlinePeer.on('open', () => {
-                        console.log('Guest peer open, connecting to', hostId);
-                        setOnlineStatus('Conectando… (tentativa ' + attempts + ')');
-                        const conn = onlinePeer.connect(hostId, { reliable: true, serialization: 'json' });
-
-                        let opened = false;
-                        const timeout = setTimeout(() => {
-                            if (!opened) {
-                                if (attempts < maxAttempts) {
-                                    setOnlineStatus('Timeout, tentando de novo…');
-                                    tryConnect();
-                                } else {
-                                    setOnlineStatus('Não encontrou a sala. Confira o código e se o host está aguardando.');
-                                    document.getElementById('online-join-confirm').style.display = 'flex';
-                                }
-                            }
-                        }, 8000);
-
-                        conn.on('open', () => {
-                            opened = true;
-                            clearTimeout(timeout);
-                            setupConnection(conn);
-                        });
-                        conn.on('error', (err) => {
-                            console.warn('connect error', err);
-                            clearTimeout(timeout);
-                            if (attempts < maxAttempts) {
-                                setTimeout(tryConnect, 1000);
-                            } else {
-                                setOnlineStatus('Falha ao conectar. Código errado ou host offline.');
-                                document.getElementById('online-join-confirm').style.display = 'flex';
-                            }
-                        });
-                    });
-
-                    onlinePeer.on('error', (err) => {
-                        console.warn('Guest peer error:', err);
-                        if (err.type === 'peer-unavailable') {
-                            setOnlineStatus('Sala não encontrada. O host criou a sala?');
-                            document.getElementById('online-join-confirm').style.display = 'flex';
-                        } else {
-                            setOnlineStatus('Erro: ' + (err.type || 'rede'));
+                    setOnlineStatus('Na sala! Aguardando o host…');
+                    // anuncia entrada várias vezes
+                    sendOnline({ type: 'join', name: playerName });
+                    setTimeout(() => sendOnline({ type: 'join', name: playerName }), 800);
+                    setTimeout(() => sendOnline({ type: 'join', name: playerName }), 1600);
+                    // se em 15s não receber start, avisa
+                    setTimeout(() => {
+                        if (!onlineMode) {
+                            setOnlineStatus('Host não respondeu. Código certo? Host está aguardando?');
                             document.getElementById('online-join-confirm').style.display = 'flex';
                         }
-                    });
-                } catch (e) {
-                    console.error(e);
-                    setOnlineStatus('Falha: ' + e.message);
-                    document.getElementById('online-join-confirm').style.display = 'flex';
-                }
-            }
-
-            tryConnect();
+                    }, 15000);
+                });
+            }, (msg) => {
+                setOnlineStatus(msg || 'Falha ao conectar');
+                document.getElementById('online-join-confirm').style.display = 'flex';
+            });
         }
 
         function broadcastShot(vx, vy) {
