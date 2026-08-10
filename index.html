@@ -2,511 +2,753 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sinuca 8 Bolas</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap');
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            background: radial-gradient(ellipse at center, #2a2a2a 0%, #0d0d0d 70%);
+            background: #0a0e14;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             font-family: 'Outfit', 'Segoe UI', Arial, sans-serif;
             overflow: hidden;
-        }
-        #game-container {
-            display: flex;
-            align-items: stretch;
-            box-shadow:
-                0 0 0 1px rgba(255,255,255,0.06),
-                0 25px 80px rgba(0,0,0,0.7),
-                0 0 60px rgba(0,40,0,0.3);
-            border-radius: 16px;
-            overflow: hidden;
-            background: #0a0a0a;
+            touch-action: none;
         }
 
-        /* ===== SIDEBAR ===== */
-        #sidebar {
-            width: 180px;
-            background: linear-gradient(175deg, #1c1c1e 0%, #121214 50%, #0e0e10 100%);
-            color: #fff;
-            padding: 22px 16px;
+        /* ===================== TELA INICIAL ===================== */
+        #menu-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            border-right: 1px solid rgba(255,255,255,0.06);
-            position: relative;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(ellipse at 30% 20%, rgba(255,140,0,0.35) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(255,80,0,0.25) 0%, transparent 45%),
+                linear-gradient(180deg, #1a0a00 0%, #3d1800 30%, #6b2e00 55%, #2a1000 100%);
+            overflow: hidden;
         }
-        #sidebar::before {
-            content: '';
+        #menu-screen.hidden { display: none; }
+
+        /* raios de sol */
+        .sunburst {
             position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #4fc3f7, #81c784, #ffb74d);
+            inset: -20%;
+            background: repeating-conic-gradient(
+                from 0deg,
+                rgba(255,180,50,0.12) 0deg 8deg,
+                transparent 8deg 16deg
+            );
+            animation: rotateSlow 60s linear infinite;
+            pointer-events: none;
         }
-        #sidebar h2 {
-            font-size: 15px;
-            font-weight: 800;
-            margin-bottom: 18px;
-            text-align: center;
-            letter-spacing: 2px;
-            background: linear-gradient(135deg, #fff 30%, #aaa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1.35;
+        @keyframes rotateSlow { to { transform: rotate(360deg); } }
+
+        /* silhuetas de fundo */
+        .silhouette {
+            position: absolute;
+            bottom: 0;
+            opacity: 0.35;
+            pointer-events: none;
+            filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
         }
-        .score-block {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 12px;
-            padding: 14px 12px;
-            margin-bottom: 12px;
-            text-align: center;
-            transition: background 0.2s;
+        .sil-left {
+            left: 2%;
+            width: 22%;
+            max-width: 260px;
+            height: 55%;
+            background: linear-gradient(180deg, transparent 0%, #1a0800 100%);
+            clip-path: polygon(30% 100%, 20% 70%, 35% 55%, 25% 40%, 40% 30%, 30% 15%, 45% 5%, 55% 20%, 50% 40%, 65% 50%, 55% 70%, 70% 100%);
         }
-        .score-block:hover {
-            background: rgba(255,255,255,0.06);
-        }
-        .score-block .label {
-            font-size: 10px;
-            color: #777;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-weight: 600;
-        }
-        .score-block .value {
-            font-size: 28px;
-            font-weight: 800;
-            color: #fff;
-            text-shadow: 0 0 20px rgba(255,255,255,0.15);
-        }
-        #current-player {
-            font-size: 17px;
-            font-weight: 700;
-            margin-top: 4px;
-            transition: color 0.3s;
-        }
-        #group-info {
-            font-size: 12px;
-            margin-top: 6px;
-            color: #999;
-            font-weight: 500;
+        .sil-right {
+            right: 2%;
+            width: 24%;
+            max-width: 280px;
+            height: 58%;
+            background: linear-gradient(180deg, transparent 0%, #1a0800 100%);
+            clip-path: polygon(40% 100%, 30% 75%, 45% 60%, 35% 45%, 50% 35%, 40% 20%, 55% 8%, 70% 25%, 65% 45%, 80% 55%, 70% 75%, 85% 100%);
         }
 
-        .cues-section {
-            margin-top: 6px;
+        /* mesa inferior decorativa */
+        .menu-table {
+            position: absolute;
+            bottom: 0;
+            left: 0; right: 0;
+            height: 28%;
+            background: linear-gradient(180deg, #0a4a1a 0%, #063510 60%, #042208 100%);
+            border-top: 8px solid #5c3a1e;
+            box-shadow: inset 0 8px 20px rgba(0,0,0,0.4);
         }
-        .cues-section .label {
-            font-size: 10px;
-            color: #777;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            text-align: center;
-            margin-bottom: 10px;
-            font-weight: 600;
+        .menu-table::before {
+            content: '';
+            position: absolute;
+            top: -14px; left: 0; right: 0;
+            height: 14px;
+            background: linear-gradient(90deg, #6b4423, #8b6914, #6b4423);
         }
-        .cues-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        .menu-balls {
+            position: absolute;
+            bottom: 18%;
+            left: 8%;
+            display: flex;
             gap: 8px;
         }
-        .cue-btn {
-            background: rgba(255,255,255,0.03);
-            border: 1.5px solid rgba(255,255,255,0.08);
+        .menu-ball {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.5), inset 0 -3px 6px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+
+        /* top bar do menu */
+        .menu-top {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 18px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, transparent 100%);
+            z-index: 5;
+        }
+        .menu-player {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 30px;
+            padding: 5px 14px 5px 5px;
+        }
+        .menu-avatar {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #fff;
+            font-size: 15px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        .menu-player-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .menu-level {
+            background: #fbbf24;
+            color: #1a0a00;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 8px;
             border-radius: 10px;
-            padding: 9px 5px 7px;
-            cursor: pointer;
+            margin-left: 4px;
+        }
+        .menu-coins {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            padding: 6px 14px;
+            color: #fbbf24;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .menu-coins span { color: #fff; margin-left: 4px; }
+
+        /* logo central */
+        .logo-wrap {
+            position: relative;
+            z-index: 10;
             text-align: center;
-            transition: all 0.25s ease;
-            color: #aaa;
-            font-size: 10px;
+            margin-bottom: 28px;
+            margin-top: -40px;
+        }
+        .logo-flames {
+            position: absolute;
+            top: -30px; left: 50%;
+            transform: translateX(-50%);
+            width: 320px; height: 100px;
+            background:
+                radial-gradient(ellipse at 30% 80%, #ff4500 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 60%, #ff8c00 0%, transparent 55%),
+                radial-gradient(ellipse at 70% 80%, #ff4500 0%, transparent 50%);
+            filter: blur(8px);
+            opacity: 0.85;
+            animation: flamePulse 1.8s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        @keyframes flamePulse {
+            from { opacity: 0.7; transform: translateX(-50%) scaleY(0.95); }
+            to   { opacity: 0.95; transform: translateX(-50%) scaleY(1.08); }
+        }
+        .logo-8 {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #333, #111 70%);
+            border: 4px solid #fff;
+            color: #fff;
+            font-size: 36px;
+            font-weight: 800;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.1);
+            margin-right: 8px;
+            vertical-align: middle;
+            position: relative;
+            z-index: 2;
+        }
+        .logo-text {
+            font-size: 64px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            background: linear-gradient(180deg, #fff 0%, #ffe066 40%, #ff8c00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 0 #b45309, 0 8px 20px rgba(0,0,0,0.4);
+            filter: drop-shadow(0 2px 0 #9a3412);
+            position: relative;
+            z-index: 2;
+            vertical-align: middle;
+        }
+        .logo-sub {
+            font-size: 13px;
+            color: rgba(255,220,150,0.7);
+            letter-spacing: 4px;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        /* botões do menu */
+        .menu-buttons {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 280px;
+        }
+        .menu-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 14px;
+            font-family: inherit;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.25);
+        }
+        .menu-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.3), 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .btn-play {
+            background: linear-gradient(180deg, #ff9f1a 0%, #e67e00 100%);
+            color: #fff;
+            font-size: 22px;
+            padding: 16px 28px;
+            text-shadow: 0 2px 0 rgba(0,0,0,0.25);
+        }
+        .btn-play:hover {
+            background: linear-gradient(180deg, #ffb347 0%, #f09000 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 rgba(0,0,0,0.3), 0 12px 28px rgba(0,0,0,0.3);
+        }
+        .btn-play:active { transform: translateY(4px); }
+        .btn-secondary {
+            background: linear-gradient(180deg, #3dd68c 0%, #22a06b 100%);
+            color: #fff;
+            font-size: 15px;
+            text-shadow: 0 1px 0 rgba(0,0,0,0.2);
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(180deg, #4ae89c 0%, #28b87a 100%);
+        }
+        .btn-shop {
+            background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+            color: #fff;
+            font-size: 15px;
+        }
+        .btn-shop:hover {
+            background: linear-gradient(180deg, #5cc8fa 0%, #0ea5e9 100%);
+        }
+
+        /* side icons */
+        .menu-side {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 10;
+        }
+        .side-btn {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            background: rgba(0,0,0,0.45);
+            border: 1px solid rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #fff;
+            font-size: 20px;
+        }
+        .side-btn:hover {
+            background: rgba(255,255,255,0.12);
+            transform: scale(1.08);
+        }
+        .side-label {
+            font-size: 9px;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            margin-top: 3px;
             font-weight: 600;
             letter-spacing: 0.3px;
         }
-        .cue-btn:hover {
-            background: rgba(255,255,255,0.07);
-            border-color: rgba(255,255,255,0.15);
-            color: #ddd;
-            transform: translateY(-1px);
-        }
-        .cue-btn.selected {
-            border-color: #4fc3f7;
-            background: rgba(79,195,247,0.12);
+
+        .menu-promo {
+            position: absolute;
+            right: 16px;
+            top: 100px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
             color: #fff;
-            box-shadow: 0 0 12px rgba(79,195,247,0.25);
-        }
-        .cue-preview {
-            height: 10px;
-            border-radius: 5px;
-            margin: 0 auto 4px;
-            width: 85%;
-            position: relative;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-        }
-
-        #instructions {
-            font-size: 11px;
-            color: #666;
-            text-align: center;
-            line-height: 1.6;
-            margin-top: 12px;
-            font-weight: 500;
-        }
-        #instructions strong {
-            color: #bbb;
-            background: rgba(255,255,255,0.08);
-            padding: 1px 6px;
-            border-radius: 4px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 12px;
             font-weight: 700;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(220,38,38,0.4);
+            z-index: 10;
+            line-height: 1.35;
+        }
+        .menu-promo .timer {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-top: 2px;
         }
 
-        .rules-btn, .mode-btn {
-            display: block;
-            width: 100%;
-            margin-top: 8px;
-            padding: 8px 0;
-            background: rgba(255,255,255,0.05);
+        /* ===================== JOGO ===================== */
+        #game-container {
+            display: none;
+            flex-direction: column;
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.08),
+                0 30px 90px rgba(0,0,0,0.75),
+                0 0 80px rgba(0,60,40,0.25);
+            border-radius: 18px;
+            overflow: hidden;
+            background: #0c1018;
+            max-width: 100vw;
+        }
+        #game-container.visible { display: flex; }
+
+        #top-hud {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px 12px;
+            background: linear-gradient(180deg, #1e2836 0%, #141c28 100%);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            gap: 12px;
+            position: relative;
+        }
+        #top-hud::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #4fc3f7, #81c784, #ffb74d, transparent);
+            opacity: 0.6;
+        }
+
+        .player-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 6px 12px 6px 6px;
+            min-width: 150px;
+            transition: all 0.25s;
+        }
+        .player-card.active {
+            border-color: rgba(79,195,247,0.5);
+            background: rgba(79,195,247,0.1);
+            box-shadow: 0 0 18px rgba(79,195,247,0.2);
+        }
+        .player-card.active.p2 {
+            border-color: rgba(255,183,77,0.5);
+            background: rgba(255,183,77,0.1);
+            box-shadow: 0 0 18px rgba(255,183,77,0.2);
+        }
+
+        .avatar {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #334155, #1e293b);
+            border: 2px solid rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 800;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .avatar.p1 { background: linear-gradient(135deg, #0ea5e9, #0369a1); }
+        .avatar.p2 { background: linear-gradient(135deg, #f59e0b, #b45309); }
+
+        .player-info { display: flex; flex-direction: column; gap: 2px; }
+        .player-name { font-size: 13px; font-weight: 700; color: #e2e8f0; letter-spacing: 0.3px; }
+        .player-group { font-size: 11px; color: #94a3b8; font-weight: 500; }
+
+        .center-score {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .score-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: #fbbf24;
+            text-shadow: 0 0 20px rgba(251,191,36,0.4);
+            letter-spacing: 1px;
+        }
+        .balls-row { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: 280px; }
+        .mini-ball {
+            width: 15px; height: 15px;
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.3);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+            position: relative;
+            flex-shrink: 0;
+        }
+        .mini-ball.sunk { opacity: 0.25; filter: grayscale(0.6); }
+        .mini-ball.eight { background: #1a1a1a !important; }
+        .mini-ball.eight::after {
+            content: '8';
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 7px; font-weight: 800; color: #fff;
+        }
+
+        .hud-right { display: flex; align-items: center; gap: 8px; }
+        .mode-chip, .rules-chip, .reset-chip, .menu-chip {
+            background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            color: #aaa;
+            border-radius: 10px;
+            padding: 7px 11px;
+            color: #cbd5e1;
             font-size: 11px;
             font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
             cursor: pointer;
             transition: all 0.2s;
             font-family: inherit;
+            letter-spacing: 0.3px;
         }
-        .rules-btn:hover, .mode-btn:hover {
+        .mode-chip:hover, .rules-chip:hover, .reset-chip:hover, .menu-chip:hover {
             background: rgba(79,195,247,0.15);
             border-color: rgba(79,195,247,0.4);
             color: #fff;
         }
-        .mode-btn.active {
-            background: rgba(255,183,77,0.15);
-            border-color: rgba(255,183,77,0.45);
+        .mode-chip.active {
+            background: rgba(255,183,77,0.18);
+            border-color: rgba(255,183,77,0.5);
             color: #ffb74d;
         }
 
-        /* ===== MODAL DE REGRAS ===== */
-        #rules-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.75);
-            display: none;
+        .table-area { display: flex; align-items: stretch; position: relative; }
+        .canvas-wrapper { position: relative; flex: 1; }
+        canvas { display: block; background: #0a2e0a; cursor: crosshair; width: 100%; height: auto; }
+
+        #cue-rack {
+            width: 48px;
+            background: linear-gradient(90deg, #2a1c10 0%, #1a120a 100%);
+            border-left: 1px solid rgba(180,130,70,0.3);
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            z-index: 100;
-            backdrop-filter: blur(4px);
+            padding: 12px 0;
+            gap: 8px;
         }
-        #rules-overlay.show {
-            display: flex;
-        }
-        #rules-modal {
-            background: linear-gradient(160deg, #1a1a1e 0%, #121216 100%);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 18px;
-            padding: 28px 32px 24px;
-            max-width: 420px;
-            width: 92%;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
-            animation: popIn 0.3s ease;
-            color: #ddd;
-        }
-        #rules-modal h3 {
-            font-size: 18px;
-            font-weight: 800;
-            text-align: center;
-            margin-bottom: 18px;
-            letter-spacing: 1.5px;
-            background: linear-gradient(135deg, #4fc3f7, #81c784);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        #rules-modal ol {
-            padding-left: 20px;
-            margin-bottom: 16px;
-        }
-        #rules-modal li {
-            font-size: 13px;
-            line-height: 1.55;
-            margin-bottom: 10px;
-            color: #bbb;
-        }
-        #rules-modal li strong {
-            color: #eee;
-        }
-        #rules-modal .close-rules {
-            display: block;
-            width: 100%;
-            margin-top: 8px;
-            padding: 10px;
-            background: rgba(79,195,247,0.15);
-            border: 1px solid rgba(79,195,247,0.35);
-            border-radius: 10px;
-            color: #4fc3f7;
-            font-size: 13px;
-            font-weight: 700;
+        .rack-cue {
+            width: 10px; height: 70px;
+            border-radius: 4px;
             cursor: pointer;
-            font-family: inherit;
-            letter-spacing: 0.5px;
             transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
         }
-        #rules-modal .close-rules:hover {
-            background: rgba(79,195,247,0.25);
-            color: #fff;
-        }
-
-        .table-area {
-            display: flex;
-            align-items: stretch;
-        }
-        .canvas-wrapper {
-            position: relative;
-        }
-        canvas {
-            display: block;
-            background: #0a3d0a;
-            cursor: crosshair;
+        .rack-cue:hover { transform: scaleX(1.3); }
+        .rack-cue.selected {
+            box-shadow: 0 0 12px rgba(79,195,247,0.6);
+            outline: 2px solid #4fc3f7;
+            outline-offset: 2px;
         }
 
-        /* ===== TUBO DE RETORNO (LATERAL DIREITA) ===== */
         #ball-tube {
-            width: 56px;
-            background: linear-gradient(90deg, #3d2610 0%, #2a1a0a 35%, #1f1408 100%);
+            width: 52px;
+            background: linear-gradient(90deg, #3d2610 0%, #2a1a0a 40%, #1f1408 100%);
             border-left: 1px solid rgba(180,130,70,0.35);
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 10px 0 12px;
+            padding: 8px 0 10px;
             position: relative;
             overflow: hidden;
         }
         #ball-tube::before {
             content: '';
             position: absolute;
-            top: 8px;
-            left: 8px;
-            right: 8px;
-            bottom: 8px;
+            top: 6px; left: 6px; right: 6px; bottom: 6px;
             background: linear-gradient(180deg, #0a0a0a 0%, #121212 40%, #0d0d0d 100%);
-            border-radius: 22px;
-            box-shadow:
-                inset 0 3px 8px rgba(0,0,0,0.85),
-                inset 0 -1px 2px rgba(255,255,255,0.04);
+            border-radius: 20px;
+            box-shadow: inset 0 3px 8px rgba(0,0,0,0.85);
             z-index: 0;
         }
         #ball-tube .tube-label {
-            position: relative;
-            z-index: 1;
-            font-size: 8px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-weight: 700;
-            writing-mode: vertical-rl;
-            transform: rotate(180deg);
-            margin-bottom: 8px;
-            opacity: 0.7;
+            position: relative; z-index: 1;
+            font-size: 8px; color: #666;
+            text-transform: uppercase; letter-spacing: 1.2px;
+            font-weight: 700; writing-mode: vertical-rl;
+            transform: rotate(180deg); margin-bottom: 6px; opacity: 0.7;
         }
         #sunk-balls {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end; /* empilha a partir do fundo do tubo */
-            align-items: center;
-            gap: 4px;
-            flex: 1;
-            width: 100%;
-            padding: 4px 0 6px;
-            overflow: hidden;
+            position: relative; z-index: 1;
+            display: flex; flex-direction: column;
+            justify-content: flex-end; align-items: center;
+            gap: 3px; flex: 1; width: 100%; padding: 4px 0; overflow: hidden;
         }
         .tube-ball {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: 800;
-            font-family: 'Outfit', Arial, sans-serif;
-            box-shadow:
-                0 2px 5px rgba(0,0,0,0.55),
-                inset 0 -2px 4px rgba(0,0,0,0.3),
-                inset 0 2px 3px rgba(255,255,255,0.25);
+            width: 28px; height: 28px;
+            border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 800;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.55), inset 0 -2px 4px rgba(0,0,0,0.3), inset 0 2px 3px rgba(255,255,255,0.25);
             position: relative;
-            /* animação de rolar de cima até a posição final */
-            animation: ballRollDown 0.7s cubic-bezier(0.25, 0.8, 0.35, 1) forwards;
+            animation: ballRollDown 0.65s cubic-bezier(0.25, 0.8, 0.35, 1) forwards;
         }
         .tube-ball::after {
             content: '';
-            position: absolute;
-            top: 5px;
-            left: 7px;
-            width: 8px;
-            height: 6px;
+            position: absolute; top: 4px; left: 6px;
+            width: 7px; height: 5px;
             background: rgba(255,255,255,0.35);
-            border-radius: 50%;
-            filter: blur(1px);
-            pointer-events: none;
+            border-radius: 50%; filter: blur(1px); pointer-events: none;
         }
         @keyframes ballRollDown {
-            0% {
-                transform: translateY(-420px) rotate(-180deg) scale(0.7);
-                opacity: 0;
-            }
-            15% {
-                opacity: 1;
-            }
-            70% {
-                transform: translateY(8px) rotate(20deg) scale(1.05);
-            }
-            85% {
-                transform: translateY(-4px) rotate(-8deg) scale(1);
-            }
-            100% {
-                transform: translateY(0) rotate(0deg) scale(1);
-                opacity: 1;
-            }
+            0% { transform: translateY(-380px) rotate(-180deg) scale(0.7); opacity: 0; }
+            15% { opacity: 1; }
+            70% { transform: translateY(6px) rotate(18deg) scale(1.05); }
+            85% { transform: translateY(-3px) rotate(-6deg) scale(1); }
+            100% { transform: translateY(0) rotate(0) scale(1); opacity: 1; }
         }
 
         #win-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
+            position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(145deg, rgba(15,15,15,0.97), rgba(28,28,32,0.97));
-            color: #fff;
-            font-size: 28px;
-            font-weight: 800;
-            text-align: center;
-            padding: 36px 48px 28px;
-            border-radius: 20px;
-            display: none;
-            z-index: 20;
-            box-shadow:
-                0 0 0 1px rgba(255,255,255,0.1),
-                0 20px 60px rgba(0,0,0,0.6),
-                0 0 40px rgba(79,195,247,0.15);
-            line-height: 1.45;
-            letter-spacing: 1px;
-            animation: popIn 0.4s ease;
-            min-width: 280px;
+            background: linear-gradient(145deg, rgba(12,16,24,0.97), rgba(22,28,40,0.97));
+            color: #fff; font-size: 26px; font-weight: 800;
+            text-align: center; padding: 32px 44px 26px;
+            border-radius: 18px; display: none; z-index: 30;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 20px 60px rgba(0,0,0,0.65), 0 0 40px rgba(79,195,247,0.15);
+            line-height: 1.4; letter-spacing: 0.8px;
+            animation: popIn 0.35s ease; min-width: 260px;
         }
-        #win-message .win-title {
-            margin-bottom: 6px;
-        }
-        #win-message .win-sub {
-            font-size: 14px;
-            font-weight: 500;
-            color: #999;
-            margin-bottom: 22px;
-            letter-spacing: 0.5px;
-        }
+        #win-message .win-title { margin-bottom: 4px; }
+        #win-message .win-sub { font-size: 13px; font-weight: 500; color: #94a3b8; margin-bottom: 20px; }
         #win-message .play-again-btn {
-            display: inline-block;
-            padding: 12px 36px;
+            display: inline-block; padding: 11px 32px;
             background: linear-gradient(135deg, #4fc3f7, #29b6f6);
-            border: none;
-            border-radius: 12px;
-            color: #0a0a0a;
-            font-size: 15px;
-            font-weight: 800;
-            font-family: inherit;
-            letter-spacing: 0.8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 20px rgba(79,195,247,0.35);
+            border: none; border-radius: 12px; color: #0a0a0a;
+            font-size: 14px; font-weight: 800; font-family: inherit;
+            letter-spacing: 0.6px; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 18px rgba(79,195,247,0.35);
         }
-        #win-message .play-again-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 28px rgba(79,195,247,0.5);
-            background: linear-gradient(135deg, #81d4fa, #4fc3f7);
-        }
-        #win-message .play-again-btn:active {
-            transform: translateY(0);
-        }
+        #win-message .play-again-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 26px rgba(79,195,247,0.5); }
         #win-message.loss .play-again-btn {
             background: linear-gradient(135deg, #ffb74d, #ffa726);
-            box-shadow: 0 4px 20px rgba(255,183,77,0.35);
+            box-shadow: 0 4px 18px rgba(255,183,77,0.35);
         }
-        #win-message.loss .play-again-btn:hover {
-            background: linear-gradient(135deg, #ffcc80, #ffb74d);
-            box-shadow: 0 6px 28px rgba(255,183,77,0.5);
-        }
+
         #foul-message {
-            position: absolute;
-            top: 70px;
-            left: 50%;
+            position: absolute; top: 60px; left: 50%;
             transform: translateX(-50%);
             background: linear-gradient(135deg, #c62828, #e53935);
-            color: #fff;
-            font-size: 26px;
-            font-weight: 800;
-            padding: 12px 44px;
-            border-radius: 12px;
-            display: none;
-            z-index: 15;
-            box-shadow: 0 8px 30px rgba(198,40,40,0.5);
-            letter-spacing: 4px;
-            animation: shake 0.4s ease;
+            color: #fff; font-size: 24px; font-weight: 800;
+            padding: 10px 40px; border-radius: 12px; display: none; z-index: 25;
+            box-shadow: 0 8px 28px rgba(198,40,40,0.5);
+            letter-spacing: 3px; animation: shake 0.4s ease;
         }
+
         @keyframes popIn {
-            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.82); }
             to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
         @keyframes shake {
             0%,100% { transform: translateX(-50%); }
-            20% { transform: translateX(calc(-50% - 8px)); }
-            40% { transform: translateX(calc(-50% + 8px)); }
-            60% { transform: translateX(calc(-50% - 5px)); }
-            80% { transform: translateX(calc(-50% + 5px)); }
+            20% { transform: translateX(calc(-50% - 7px)); }
+            40% { transform: translateX(calc(-50% + 7px)); }
+            60% { transform: translateX(calc(-50% - 4px)); }
+            80% { transform: translateX(calc(-50% + 4px)); }
+        }
+
+        #rules-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.78);
+            display: none; align-items: center; justify-content: center;
+            z-index: 100; backdrop-filter: blur(5px);
+        }
+        #rules-overlay.show { display: flex; }
+        #rules-modal {
+            background: linear-gradient(160deg, #1a2230 0%, #121820 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 18px; padding: 26px 30px 22px;
+            max-width: 420px; width: 92%; max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+            animation: popIn 0.3s ease; color: #ddd;
+        }
+        #rules-modal h3 {
+            font-size: 17px; font-weight: 800; text-align: center;
+            margin-bottom: 16px; letter-spacing: 1.2px;
+            background: linear-gradient(135deg, #4fc3f7, #81c784);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        #rules-modal ol { padding-left: 18px; margin-bottom: 14px; }
+        #rules-modal li { font-size: 13px; line-height: 1.55; margin-bottom: 9px; color: #a8b4c4; }
+        #rules-modal li strong { color: #e2e8f0; }
+        #rules-modal .close-rules {
+            display: block; width: 100%; margin-top: 6px; padding: 10px;
+            background: rgba(79,195,247,0.15); border: 1px solid rgba(79,195,247,0.35);
+            border-radius: 10px; color: #4fc3f7; font-size: 13px; font-weight: 700;
+            cursor: pointer; font-family: inherit; transition: all 0.2s;
+        }
+        #rules-modal .close-rules:hover { background: rgba(79,195,247,0.25); color: #fff; }
+
+        #hint-bar {
+            text-align: center; padding: 6px 12px 8px;
+            font-size: 11px; color: #64748b; background: #0c1018; letter-spacing: 0.3px;
+        }
+        #hint-bar strong {
+            color: #94a3b8; background: rgba(255,255,255,0.06);
+            padding: 1px 5px; border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="sidebar">
+    <!-- ===================== TELA INICIAL ===================== -->
+    <div id="menu-screen">
+        <div class="sunburst"></div>
+        <div class="silhouette sil-left"></div>
+        <div class="silhouette sil-right"></div>
+        <div class="menu-table">
+            <div class="menu-balls">
+                <div class="menu-ball" style="background: radial-gradient(circle at 35% 30%, #fff, #e0e0e0);"></div>
+                <div class="menu-ball" style="background: radial-gradient(circle at 35% 30%, #f87171, #dc2626);"></div>
+                <div class="menu-ball" style="background: linear-gradient(180deg, #f5f5f5 0%, #f5f5f5 30%, #eab308 30%, #eab308 70%, #f5f5f5 70%);"></div>
+                <div class="menu-ball" style="background: radial-gradient(circle at 35% 30%, #4ade80, #16a34a);"></div>
+            </div>
+        </div>
+
+        <div class="menu-top">
+            <div class="menu-player">
+                <div class="menu-avatar">P1</div>
+                <div>
+                    <div class="menu-player-name">Jogador</div>
+                </div>
+                <div class="menu-level">1</div>
+            </div>
+            <div class="menu-coins">
+                🪙 <span id="coin-count">550</span>
+            </div>
+        </div>
+
+        <div class="menu-side">
             <div>
-                <h2>SINUCA<br>8 BOLAS</h2>
+                <div class="side-btn" title="Gire e Ganhe">🎡</div>
+                <div class="side-label">Gire e Ganhe</div>
+            </div>
+            <div>
+                <div class="side-btn" title="Raspe e Ganhe">🎱</div>
+                <div class="side-label">Raspe e Ganhe</div>
+            </div>
+            <div>
+                <div class="side-btn" title="Alto-Baixo">↕️</div>
+                <div class="side-label">Alto-Baixo</div>
+            </div>
+        </div>
 
-                <div class="score-block">
-                    <div class="label">Bolas restantes</div>
-                    <div class="value" id="balls-left">7</div>
-                </div>
+        <div class="menu-promo">
+            🎱 Moedas em dobro!<br>
+            <div class="timer" id="promo-timer">9h 3m 4s</div>
+        </div>
 
-                <div class="score-block">
-                    <div class="label">Vez de</div>
-                    <div id="current-player">Jogador 1</div>
-                    <div id="group-info">Mesa Aberta</div>
-                </div>
+        <div class="logo-wrap">
+            <div class="logo-flames"></div>
+            <div>
+                <span class="logo-8">8</span>
+                <span class="logo-text">POOL</span>
+            </div>
+            <div class="logo-sub">SINUCA 8 BOLAS</div>
+        </div>
 
-                <div class="cues-section">
-                    <div class="label">Escolher Taco</div>
-                    <div class="cues-grid" id="cues-grid"></div>
+        <div class="menu-buttons">
+            <button class="menu-btn btn-play" id="btn-play">▶  Jogar</button>
+            <button class="menu-btn btn-secondary" id="btn-tournaments">🏆  Torneios</button>
+            <button class="menu-btn btn-shop" id="btn-shop">🎱  Loja da Sinuca</button>
+        </div>
+    </div>
+
+    <!-- ===================== JOGO ===================== -->
+    <div id="game-container">
+        <div id="top-hud">
+            <div class="player-card active" id="card-p1">
+                <div class="avatar p1">P1</div>
+                <div class="player-info">
+                    <div class="player-name" id="name-p1">Jogador 1</div>
+                    <div class="player-group" id="group-p1">Mesa Aberta</div>
                 </div>
             </div>
 
-            <div id="instructions">
-                Arraste da bola branca<br>
-                Após falta: posicione a branca<br>
-                <strong>R</strong> Reiniciar
-                <button class="mode-btn" id="mode-btn">Modo: 2 Jogadores</button>
-                <button class="rules-btn" id="rules-btn">Regras</button>
+            <div class="center-score">
+                <div class="score-value" id="score-display">0</div>
+                <div class="balls-row" id="balls-status"></div>
+            </div>
+
+            <div class="player-card" id="card-p2">
+                <div class="player-info" style="align-items:flex-end; text-align:right;">
+                    <div class="player-name" id="name-p2">Jogador 2</div>
+                    <div class="player-group" id="group-p2">Mesa Aberta</div>
+                </div>
+                <div class="avatar p2">P2</div>
+            </div>
+
+            <div class="hud-right">
+                <button class="mode-chip" id="mode-btn">2 Jogadores</button>
+                <button class="rules-chip" id="rules-btn">Regras</button>
+                <button class="reset-chip" id="reset-btn">R</button>
+                <button class="menu-chip" id="back-menu-btn">☰</button>
             </div>
         </div>
 
@@ -516,10 +758,15 @@
                 <div id="win-message"></div>
                 <div id="foul-message">FOUL!</div>
             </div>
+            <div id="cue-rack"></div>
             <div id="ball-tube">
                 <span class="tube-label">Tubo</span>
                 <div id="sunk-balls"></div>
             </div>
+        </div>
+
+        <div id="hint-bar">
+            Arraste da bola branca · Após falta: posicione a branca · <strong>R</strong> Reiniciar
         </div>
     </div>
 
@@ -531,7 +778,7 @@
                 <li><strong>Grupos:</strong> Sólidas (1–7) ou Listadas (9–15). Cada jogador fica com um grupo.</li>
                 <li><strong>Objetivo:</strong> encaçapar todas as bolas do seu grupo e depois a bola 8.</li>
                 <li><strong>Bola 8:</strong> só pode ser encaçapada depois que todas as suas bolas já tiverem caído. Se a 8 cair antes, você perde.</li>
-                <li><strong>Falta (FOUL):</strong> encaçapar a bola branca. A vez passa e o adversário recebe <strong>bola na mão</strong> — pode arrastar a branca para qualquer lugar da mesa antes de bater.</li>
+                <li><strong>Falta (FOUL):</strong> encaçapar a bola branca. A vez passa e o adversário recebe <strong>bola na mão</strong>.</li>
                 <li><strong>Turno:</strong> se você encaçapar uma bola válida do seu grupo, joga de novo. Caso contrário, a vez passa.</li>
                 <li><strong>Vitória:</strong> encaçapar a bola 8 legalmente após limpar o seu grupo.</li>
             </ol>
@@ -540,76 +787,87 @@
     </div>
 
     <script>
+        // ===== MENU =====
+        const menuScreen = document.getElementById('menu-screen');
+        const gameContainer = document.getElementById('game-container');
+
+        document.getElementById('btn-play').addEventListener('click', () => {
+            menuScreen.classList.add('hidden');
+            gameContainer.classList.add('visible');
+            // reinicia o jogo ao entrar
+            if (typeof createBalls === 'function') createBalls();
+        });
+
+        document.getElementById('back-menu-btn').addEventListener('click', () => {
+            gameContainer.classList.remove('visible');
+            menuScreen.classList.remove('hidden');
+        });
+
+        // botões decorativos do menu
+        document.getElementById('btn-tournaments').addEventListener('click', () => {
+            alert('Torneios em breve! 🏆');
+        });
+        document.getElementById('btn-shop').addEventListener('click', () => {
+            alert('Loja da Sinuca em breve! 🎱');
+        });
+
+        // timer promocional decorativo
+        let promoSeconds = 9 * 3600 + 3 * 60 + 4;
+        setInterval(() => {
+            promoSeconds = Math.max(0, promoSeconds - 1);
+            const h = Math.floor(promoSeconds / 3600);
+            const m = Math.floor((promoSeconds % 3600) / 60);
+            const s = promoSeconds % 60;
+            const el = document.getElementById('promo-timer');
+            if (el) el.textContent = `${h}h ${m}m ${s}s`;
+        }, 1000);
+
+        // ===== JOGO =====
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const winMessage = document.getElementById('win-message');
         const foulMessage = document.getElementById('foul-message');
 
         const W = 900, H = 500;
-        const BORDER = 42;
-        const BALL_RADIUS = 14;
-        const POCKET_RADIUS = 24;
-        const FRICTION = 0.978;
+        const BORDER = 48;
+        const BALL_RADIUS = 13.5;
+        const POCKET_RADIUS = 26;
+        const FRICTION = 0.979;
 
         const cues = [
-            {
-                name: 'Clássico',
-                shaft: '#c4a574', butt: '#8b6914', grip: '#3d2b1f',
-                rings: ['#e8d5b0', '#5c4033'], tip: '#f5f5f5', power: 1.00
-            },
-            {
-                name: 'Azul',
-                shaft: '#2563eb', butt: '#1e3a8a', grip: '#0f172a',
-                rings: ['#93c5fd', '#1e40af'], tip: '#dbeafe', power: 1.05
-            },
-            {
-                name: 'Vermelho',
-                shaft: '#dc2626', butt: '#7f1d1d', grip: '#1c1917',
-                rings: ['#fca5a5', '#991b1b'], tip: '#fee2e2', power: 1.08
-            },
-            {
-                name: 'Verde',
-                shaft: '#16a34a', butt: '#14532d', grip: '#052e16',
-                rings: ['#86efac', '#166534'], tip: '#dcfce7', power: 0.97
-            },
-            {
-                name: 'Roxo',
-                shaft: '#9333ea', butt: '#581c87', grip: '#1e1b4b',
-                rings: ['#d8b4fe', '#6b21a8'], tip: '#f3e8ff', power: 1.03
-            },
-            {
-                name: 'Dourado',
-                shaft: '#ca8a04', butt: '#713f12', grip: '#1c1917',
-                rings: ['#fde047', '#a16207', '#fef08a'], tip: '#fefce8', power: 1.12
-            }
+            { name: 'Clássico', shaft: '#c4a574', butt: '#8b6914', grip: '#3d2b1f', rings: ['#e8d5b0', '#5c4033'], tip: '#f5f5f5', power: 1.00 },
+            { name: 'Azul',     shaft: '#2563eb', butt: '#1e3a8a', grip: '#0f172a', rings: ['#93c5fd', '#1e40af'], tip: '#dbeafe', power: 1.05 },
+            { name: 'Vermelho', shaft: '#dc2626', butt: '#7f1d1d', grip: '#1c1917', rings: ['#fca5a5', '#991b1b'], tip: '#fee2e2', power: 1.08 },
+            { name: 'Verde',    shaft: '#16a34a', butt: '#14532d', grip: '#052e16', rings: ['#86efac', '#166534'], tip: '#dcfce7', power: 0.97 },
+            { name: 'Roxo',     shaft: '#9333ea', butt: '#581c87', grip: '#1e1b4b', rings: ['#d8b4fe', '#6b21a8'], tip: '#f3e8ff', power: 1.03 },
+            { name: 'Dourado',  shaft: '#ca8a04', butt: '#713f12', grip: '#1c1917', rings: ['#fde047', '#a16207', '#fef08a'], tip: '#fefce8', power: 1.12 }
         ];
         let selectedCue = 0;
 
-        function buildCueButtons() {
-            const grid = document.getElementById('cues-grid');
-            grid.innerHTML = '';
+        function buildCueRack() {
+            const rack = document.getElementById('cue-rack');
+            rack.innerHTML = '';
             cues.forEach((cue, i) => {
-                const btn = document.createElement('div');
-                btn.className = 'cue-btn' + (i === selectedCue ? ' selected' : '');
-                const ringsHtml = cue.rings.map(c =>
-                    `<span style="display:inline-block;width:5px;height:7px;background:${c};margin:0 1px;border-radius:1px;"></span>`
-                ).join('');
-                btn.innerHTML = `
-                    <div class="cue-preview" style="background:linear-gradient(90deg, ${cue.butt} 0%, ${cue.shaft} 35%, ${cue.shaft} 100%);">
-                        <div style="position:absolute;right:2px;top:1px;width:5px;height:8px;background:${cue.tip};border-radius:2px;"></div>
-                    </div>
-                    <div style="margin:2px 0 1px;line-height:1;">${ringsHtml}</div>
-                    ${cue.name}
-                `;
-                btn.onclick = () => {
+                const el = document.createElement('div');
+                el.className = 'rack-cue' + (i === selectedCue ? ' selected' : '');
+                el.style.background = `linear-gradient(180deg, ${cue.tip} 0%, ${cue.shaft} 12%, ${cue.shaft} 55%, ${cue.grip} 70%, ${cue.butt} 100%)`;
+                el.title = cue.name;
+                el.onclick = () => {
                     selectedCue = i;
-                    document.querySelectorAll('.cue-btn').forEach((b, idx) => {
-                        b.classList.toggle('selected', idx === i);
-                    });
+                    document.querySelectorAll('.rack-cue').forEach((b, idx) => b.classList.toggle('selected', idx === i));
                 };
-                grid.appendChild(btn);
+                rack.appendChild(el);
             });
         }
+
+        const ballColors = {
+            0: '#f5f5f5',
+            1: '#e74c3c', 2: '#3498db', 3: '#e67e22', 4: '#9b59b6',
+            5: '#f1c40f', 6: '#27ae60', 7: '#c0392b',
+            8: '#1a1a1a',
+            9: '#e74c3c', 10: '#3498db', 11: '#e67e22', 12: '#9b59b6',
+            13: '#f1c40f', 14: '#27ae60', 15: '#c0392b'
+        };
 
         let balls = [], cueBall = null;
         let isAiming = false, aimStartX = 0, aimStartY = 0;
@@ -619,22 +877,17 @@
         let shotSunkValid = 0;
         let shotCueSunk = false;
         let shotEightSunk = false;
-        let sunkBallList = []; // números das bolas que caíram no tubo
-        let ballInHand = false;   // bola na mão após falta
-        let isPlacing = false;    // arrastando a branca para posicionar
-        let vsCPU = false;        // modo contra o computador
-        let cpuThinking = false;  // CPU está "pensando"/jogando
+        let sunkBallList = [];
+        let ballInHand = false;
+        let isPlacing = false;
+        let vsCPU = false;
+        let cpuThinking = false;
+        let totalPoints = 0;
 
         const pockets = [
             {x: BORDER, y: BORDER}, {x: W/2, y: BORDER}, {x: W - BORDER, y: BORDER},
             {x: BORDER, y: H - BORDER}, {x: W/2, y: H - BORDER}, {x: W - BORDER, y: H - BORDER}
         ];
-
-        const ballColors = {
-            0: '#f5f5f5',
-            1: '#e74c3c', 2: '#3498db', 3: '#e67e22', 4: '#9b59b6',
-            5: '#f1c40f', 6: '#27ae60', 7: '#c0392b', 8: '#1a1a1a'
-        };
 
         class Ball {
             constructor(x, y, num) {
@@ -644,6 +897,7 @@
                 this.radius = BALL_RADIUS;
                 this.color = ballColors[num] || '#333';
                 this.sunk = false;
+                this.isStripe = num >= 9;
             }
             update() {
                 if (this.sunk) return;
@@ -651,62 +905,72 @@
                 this.y += this.vy;
                 this.vx *= FRICTION;
                 this.vy *= FRICTION;
-                if (Math.abs(this.vx) < 0.08) this.vx = 0;
-                if (Math.abs(this.vy) < 0.08) this.vy = 0;
+                if (Math.abs(this.vx) < 0.07) this.vx = 0;
+                if (Math.abs(this.vy) < 0.07) this.vy = 0;
 
-                if (this.x - this.radius < BORDER) { this.x = BORDER + this.radius; this.vx = -this.vx * 0.88; }
-                if (this.x + this.radius > W - BORDER) { this.x = W - BORDER - this.radius; this.vx = -this.vx * 0.88; }
-                if (this.y - this.radius < BORDER) { this.y = BORDER + this.radius; this.vy = -this.vy * 0.88; }
-                if (this.y + this.radius > H - BORDER) { this.y = H - BORDER - this.radius; this.vy = -this.vy * 0.88; }
+                if (this.x - this.radius < BORDER) { this.x = BORDER + this.radius; this.vx = -this.vx * 0.87; }
+                if (this.x + this.radius > W - BORDER) { this.x = W - BORDER - this.radius; this.vx = -this.vx * 0.87; }
+                if (this.y - this.radius < BORDER) { this.y = BORDER + this.radius; this.vy = -this.vy * 0.87; }
+                if (this.y + this.radius > H - BORDER) { this.y = H - BORDER - this.radius; this.vy = -this.vy * 0.87; }
             }
             draw() {
                 if (this.sunk) return;
                 const speed = Math.hypot(this.vx, this.vy);
 
-                // Sombra no chão
                 ctx.beginPath();
-                ctx.ellipse(this.x + 3, this.y + this.radius * 0.7, this.radius * 0.85, this.radius * 0.3, 0, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(0,0,0,0.35)';
+                ctx.ellipse(this.x + 2.5, this.y + this.radius * 0.65, this.radius * 0.82, this.radius * 0.28, 0, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,0,0,0.32)';
                 ctx.fill();
 
-                // Bola com gradiente 3D
-                const grad = ctx.createRadialGradient(
-                    this.x - 4, this.y - 5, 2,
-                    this.x, this.y, this.radius
-                );
-                grad.addColorStop(0, lighten(this.color, 40));
-                grad.addColorStop(0.5, this.color);
-                grad.addColorStop(1, darken(this.color, 25));
+                if (this.isStripe) {
+                    const grad = ctx.createRadialGradient(this.x - 4, this.y - 5, 2, this.x, this.y, this.radius);
+                    grad.addColorStop(0, '#ffffff');
+                    grad.addColorStop(0.6, '#f0f0f0');
+                    grad.addColorStop(1, '#d0d0d0');
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x - this.radius, this.y - this.radius * 0.38, this.radius * 2, this.radius * 0.76);
+                    ctx.restore();
+                } else {
+                    const grad = ctx.createRadialGradient(this.x - 4, this.y - 5, 2, this.x, this.y, this.radius);
+                    grad.addColorStop(0, lighten(this.color, 42));
+                    grad.addColorStop(0.5, this.color);
+                    grad.addColorStop(1, darken(this.color, 28));
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                }
 
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = grad;
-                ctx.fill();
-
-                ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+                ctx.strokeStyle = 'rgba(0,0,0,0.22)';
                 ctx.lineWidth = 1;
                 ctx.stroke();
 
-                // Brilho
                 ctx.beginPath();
-                ctx.arc(this.x - 5, this.y - 6, 5.5, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255,255,255,${0.45 + speed * 0.03})`;
+                ctx.arc(this.x - 4.5, this.y - 5.5, 5, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,255,255,${0.42 + speed * 0.025})`;
                 ctx.fill();
-
                 ctx.beginPath();
-                ctx.arc(this.x - 3, this.y - 4, 2, 0, Math.PI * 2);
+                ctx.arc(this.x - 2.8, this.y - 3.8, 1.8, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(255,255,255,0.7)';
                 ctx.fill();
 
                 if (this.number > 0) {
                     if (this.number !== 8) {
                         ctx.beginPath();
-                        ctx.arc(this.x, this.y, 7.5, 0, Math.PI * 2);
-                        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+                        ctx.arc(this.x, this.y, 6.8, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(255,255,255,0.95)';
                         ctx.fill();
                     }
                     ctx.fillStyle = this.number === 8 ? '#fff' : '#111';
-                    ctx.font = 'bold 13px Outfit, Arial';
+                    ctx.font = 'bold 12px Outfit, Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(this.number, this.x, this.y + 0.5);
@@ -741,73 +1005,93 @@
             ballInHand = false;
             isPlacing = false;
             cpuThinking = false;
+            totalPoints = 0;
             winMessage.style.display = 'none';
             foulMessage.style.display = 'none';
             updateBallTube();
             updateUI();
+            updateBallsStatus();
 
             cueBall = new Ball(230, H/2, 0);
             balls.push(cueBall);
 
-            const startX = 640;
-            const startY = H/2 - 28;
-            const positions = [
-                {x:0, y:0, n:1}, {x:1,y:-1,n:2}, {x:1,y:1,n:3},
-                {x:2,y:-2,n:4}, {x:2,y:0,n:8}, {x:2,y:2,n:5},
-                {x:3,y:-1,n:6}, {x:3,y:1,n:7}
+            const rack = [
+                {r:0, c:0, n:1},
+                {r:1, c:-0.5, n:9}, {r:1, c:0.5, n:2},
+                {r:2, c:-1, n:10}, {r:2, c:0, n:8}, {r:2, c:1, n:3},
+                {r:3, c:-1.5, n:11}, {r:3, c:-0.5, n:4}, {r:3, c:0.5, n:12}, {r:3, c:1.5, n:5},
+                {r:4, c:-2, n:13}, {r:4, c:-1, n:6}, {r:4, c:0, n:14}, {r:4, c:1, n:7}, {r:4, c:2, n:15}
             ];
-            positions.forEach(p => {
-                const x = startX + p.x * (BALL_RADIUS * 2.16);
-                const y = startY + p.y * (BALL_RADIUS * 2.12);
+
+            const startX = 620;
+            const startY = H / 2;
+            const gapX = BALL_RADIUS * 2.05;
+            const gapY = BALL_RADIUS * 1.78;
+
+            rack.forEach(p => {
+                const x = startX + p.r * gapX;
+                const y = startY + p.c * gapY;
                 balls.push(new Ball(x, y, p.n));
             });
         }
 
         function updateUI() {
-            document.getElementById('balls-left').textContent = 7 - sunkBalls;
-            const playerEl = document.getElementById('current-player');
-            if (vsCPU && currentPlayer === 2) {
-                playerEl.textContent = cpuThinking ? 'CPU pensando…' : 'CPU';
-            } else {
-                playerEl.textContent = vsCPU ? 'Você' : `Jogador ${currentPlayer}`;
-            }
-            playerEl.style.color = currentPlayer === 1 ? '#4fc3f7' : '#ffb74d';
-            const groupEl = document.getElementById('group-info');
+            document.getElementById('name-p1').textContent = vsCPU ? 'Você' : 'Jogador 1';
+            document.getElementById('name-p2').textContent = vsCPU ? (cpuThinking ? 'CPU…' : 'CPU') : 'Jogador 2';
+
+            const g1 = playerGroups[1];
+            const g2 = playerGroups[2];
+            document.getElementById('group-p1').textContent = g1 ? (g1 === 'solid' ? '● Sólidas' : '▥ Listadas') : 'Mesa Aberta';
+            document.getElementById('group-p2').textContent = g2 ? (g2 === 'solid' ? '● Sólidas' : '▥ Listadas') : 'Mesa Aberta';
+
+            document.getElementById('card-p1').classList.toggle('active', currentPlayer === 1);
+            document.getElementById('card-p2').classList.toggle('active', currentPlayer === 2);
+            document.getElementById('card-p2').classList.toggle('p2', currentPlayer === 2);
+
             if (ballInHand && !(vsCPU && currentPlayer === 2)) {
-                groupEl.textContent = '✋ Bola na mão';
-                groupEl.style.color = '#ffb74d';
-            } else {
-                const group = playerGroups[currentPlayer];
-                groupEl.textContent = group ?
-                    (group === 'solid' ? '● Sólidas' : '▥ Listadas') :
-                    'Mesa Aberta';
-                groupEl.style.color = '#999';
+                const el = currentPlayer === 1 ? 'group-p1' : 'group-p2';
+                document.getElementById(el).textContent = '✋ Bola na mão';
             }
+
+            document.getElementById('score-display').textContent = totalPoints;
+        }
+
+        function updateBallsStatus() {
+            const container = document.getElementById('balls-status');
+            container.innerHTML = '';
+            const order = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
+            order.forEach(n => {
+                const el = document.createElement('div');
+                el.className = 'mini-ball' + (n === 8 ? ' eight' : '');
+                const b = balls.find(ball => ball.number === n);
+                if (b && b.sunk) el.classList.add('sunk');
+                if (n !== 8) {
+                    if (n >= 9) {
+                        el.style.background = `linear-gradient(180deg, #f0f0f0 0%, #f0f0f0 30%, ${ballColors[n]} 30%, ${ballColors[n]} 70%, #f0f0f0 70%)`;
+                    } else {
+                        el.style.background = `radial-gradient(circle at 35% 30%, ${lighten(ballColors[n],30)}, ${ballColors[n]})`;
+                    }
+                }
+                container.appendChild(el);
+            });
         }
 
         function isCPUTurn() {
             return vsCPU && currentPlayer === 2 && !gameWon;
         }
 
-        // ===== IA DO CPU =====
         function getCPUTargets() {
             const group = playerGroups[2];
             let ownLeft = balls.filter(b =>
                 !b.sunk && b.number !== 0 && b.number !== 8 &&
                 ((group === 'solid' && b.number <= 7) ||
-                 (group === 'stripe' && b.number > 8) ||
+                 (group === 'stripe' && b.number >= 9) ||
                  (!group))
             );
-            // mesa só tem sólidas (1–7): se o grupo for listadas e não houver nenhuma, usa as sólidas restantes
-            if (group === 'stripe' && ownLeft.length === 0) {
-                ownLeft = balls.filter(b => !b.sunk && b.number >= 1 && b.number <= 7);
-            }
-            // limpou o grupo → mira a 8
             if (group && ownLeft.length === 0) {
                 const eight = balls.find(b => b.number === 8 && !b.sunk);
                 return eight ? [eight] : [];
             }
-            // se ainda não tem grupo e não sobrou bola de objeto, também mira a 8
             if (!group && ownLeft.length === 0) {
                 const eight = balls.find(b => b.number === 8 && !b.sunk);
                 return eight ? [eight] : [];
@@ -816,7 +1100,6 @@
         }
 
         function scoreShot(cue, target, pocket) {
-            // vetor bola → caçapa
             const toPx = pocket.x - target.x;
             const toPy = pocket.y - target.y;
             const toPLen = Math.hypot(toPx, toPy);
@@ -824,12 +1107,9 @@
 
             const dirPX = toPx / toPLen;
             const dirPY = toPy / toPLen;
-
-            // posição da ghost ball (onde a branca deve estar no contato)
             const ghostX = target.x - dirPX * (BALL_RADIUS * 2);
             const ghostY = target.y - dirPY * (BALL_RADIUS * 2);
 
-            // direção da branca até a ghost
             const toGX = ghostX - cue.x;
             const toGY = ghostY - cue.y;
             const toGLen = Math.hypot(toGX, toGY);
@@ -838,7 +1118,6 @@
             const dirGX = toGX / toGLen;
             const dirGY = toGY / toGLen;
 
-            // caminho livre branca → ghost?
             for (const b of balls) {
                 if (b.sunk || b === cue || b === target) continue;
                 const proj = (b.x - cue.x) * dirGX + (b.y - cue.y) * dirGY;
@@ -847,8 +1126,6 @@
                 const cy = cue.y + dirGY * proj;
                 if (Math.hypot(b.x - cx, b.y - cy) < BALL_RADIUS * 2 - 1) return -1;
             }
-
-            // caminho livre target → pocket?
             for (const b of balls) {
                 if (b.sunk || b === target || b === cue) continue;
                 const proj = (b.x - target.x) * dirPX + (b.y - target.y) * dirPY;
@@ -858,11 +1135,9 @@
                 if (Math.hypot(b.x - cx, b.y - cy) < BALL_RADIUS * 2 - 1) return -1;
             }
 
-            // ângulo de corte (1 = cheio, 0 = muito fino)
             const cut = Math.max(0, dirGX * dirPX + dirGY * dirPY);
-            if (cut < 0.15) return -1; // corte impossível demais
+            if (cut < 0.14) return -1;
 
-            // score: prefere bolas perto da caçapa, corte bom, distância razoável
             const distScore = 1 / (1 + toPLen / 200);
             const cutScore = cut;
             const approachScore = 1 / (1 + toGLen / 300);
@@ -882,7 +1157,6 @@
                     const s = scoreShot(cueBall, target, pocket);
                     if (s > bestScore) {
                         bestScore = s;
-                        // direção: da branca para a ghost ball
                         const toPx = pocket.x - target.x;
                         const toPy = pocket.y - target.y;
                         const toPLen = Math.hypot(toPx, toPy) || 1;
@@ -893,19 +1167,12 @@
                         const dx = ghostX - cueBall.x;
                         const dy = ghostY - cueBall.y;
                         const dist = Math.hypot(dx, dy) || 1;
-                        // potência baseada na distância total
                         const power = Math.min(95, 35 + toPLen * 0.12 + dist * 0.08);
-                        best = {
-                            dirX: dx / dist,
-                            dirY: dy / dist,
-                            power,
-                            score: s
-                        };
+                        best = { dirX: dx / dist, dirY: dy / dist, power, score: s };
                     }
                 }
             }
 
-            // se não achou tacada boa, empurra a bola mais próxima do grupo
             if (!best && targets.length > 0) {
                 let nearest = targets[0];
                 let nDist = Math.hypot(nearest.x - cueBall.x, nearest.y - cueBall.y);
@@ -916,15 +1183,9 @@
                 const dx = nearest.x - cueBall.x;
                 const dy = nearest.y - cueBall.y;
                 const dist = Math.hypot(dx, dy) || 1;
-                best = {
-                    dirX: dx / dist,
-                    dirY: dy / dist,
-                    power: 50 + Math.random() * 25,
-                    score: 0
-                };
+                best = { dirX: dx / dist, dirY: dy / dist, power: 50 + Math.random() * 25, score: 0 };
             }
 
-            // erro humano da CPU (não é perfeita)
             if (best) {
                 const err = (0.04 + Math.random() * 0.06) * (best.score < 1.5 ? 1.8 : 1);
                 const angle = Math.atan2(best.dirY, best.dirX) + (Math.random() - 0.5) * err;
@@ -936,9 +1197,8 @@
         }
 
         function cpuPlaceCueBall() {
-            // tenta posições boas na área de saque / centro esquerdo
             const candidates = [];
-            for (let i = 0; i < 25; i++) {
+            for (let i = 0; i < 30; i++) {
                 const x = BORDER + BALL_RADIUS + 20 + Math.random() * 280;
                 const y = BORDER + BALL_RADIUS + 20 + Math.random() * (H - BORDER * 2 - BALL_RADIUS * 2 - 40);
                 if (isValidCuePosition(x, y)) candidates.push({x, y});
@@ -947,7 +1207,6 @@
                 placeCueBall(230, H / 2);
                 return;
             }
-            // prefere perto do centro da área esquerda
             candidates.sort((a, b) => Math.hypot(a.x - 250, a.y - H/2) - Math.hypot(b.x - 250, b.y - H/2));
             placeCueBall(candidates[0].x, candidates[0].y);
         }
@@ -958,30 +1217,23 @@
                 updateUI();
                 return;
             }
-
             if (ballInHand) {
                 cpuPlaceCueBall();
                 ballInHand = false;
                 isPlacing = false;
                 updateUI();
             }
-
             const shot = findBestCPUShot();
             if (!shot) {
-                // tacada aleatória fraca pra frente
                 const angle = (Math.random() - 0.5) * 0.8;
                 cueBall.vx = Math.cos(angle) * 8;
                 cueBall.vy = Math.sin(angle) * 8;
             } else {
-                // converte power (0-100) no mesmo sistema do jogador
-                // player: basePower = 0.148 * cue.power, vx = dx * basePower onde dx ~ até ~480
-                // então velocidade típica ~ power_visual * 0.148 * factor
                 const cue = cues[selectedCue];
                 const speed = shot.power * 0.72 * cue.power;
                 cueBall.vx = shot.dirX * speed;
                 cueBall.vy = shot.dirY * speed;
             }
-
             cpuThinking = false;
             shotActive = true;
             shotSunkValid = 0;
@@ -995,92 +1247,121 @@
             if (!isCPUTurn() || gameWon || shotActive) return;
             cpuThinking = true;
             updateUI();
-            // delay “pensando”
             const delay = ballInHand ? 900 + Math.random() * 500 : 700 + Math.random() * 900;
             setTimeout(() => {
-                if (isCPUTurn() && !shotActive && !gameWon) {
-                    cpuShoot();
-                } else {
-                    cpuThinking = false;
-                    updateUI();
-                }
+                if (isCPUTurn() && !shotActive && !gameWon) cpuShoot();
+                else { cpuThinking = false; updateUI(); }
             }, delay);
         }
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(freq, duration, type = 'triangle', vol = 0.7) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.value = vol;
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-            osc.connect(gain).connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration + 0.1);
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.value = vol;
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain).connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration + 0.1);
+            } catch(e) {}
         }
 
         function drawTable() {
-            // Felt
-            const feltGrad = ctx.createRadialGradient(W/2, H/2, 50, W/2, H/2, 500);
-            feltGrad.addColorStop(0, '#0d5c0d');
-            feltGrad.addColorStop(1, '#084008');
+            const feltGrad = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, 520);
+            feltGrad.addColorStop(0, '#0e6b2e');
+            feltGrad.addColorStop(0.55, '#0a5a24');
+            feltGrad.addColorStop(1, '#074018');
             ctx.fillStyle = feltGrad;
             ctx.fillRect(BORDER, BORDER, W - BORDER*2, H - BORDER*2);
 
-            // Rails
+            ctx.fillStyle = 'rgba(255,255,255,0.015)';
+            for (let i = 0; i < 120; i++) {
+                const x = BORDER + Math.random() * (W - BORDER*2);
+                const y = BORDER + Math.random() * (H - BORDER*2);
+                ctx.fillRect(x, y, 1.5, 1.5);
+            }
+
             const railGrad = ctx.createLinearGradient(0, 0, 0, H);
-            railGrad.addColorStop(0, '#5c3a1e');
-            railGrad.addColorStop(0.3, '#4a2e14');
-            railGrad.addColorStop(0.7, '#3d2610');
+            railGrad.addColorStop(0, '#6b4423');
+            railGrad.addColorStop(0.25, '#5a381c');
+            railGrad.addColorStop(0.5, '#4a2e14');
+            railGrad.addColorStop(0.75, '#3d2610');
             railGrad.addColorStop(1, '#2e1c0c');
             ctx.strokeStyle = railGrad;
-            ctx.lineWidth = 44;
+            ctx.lineWidth = 52;
             ctx.lineJoin = 'round';
-            ctx.strokeRect(BORDER/2 + 2, BORDER/2 + 2, W - BORDER - 4, H - BORDER - 4);
+            ctx.strokeRect(BORDER/2 + 1, BORDER/2 + 1, W - BORDER - 2, H - BORDER - 2);
 
-            // Destaque madeira
-            ctx.strokeStyle = 'rgba(180,130,70,0.35)';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(BORDER - 2, BORDER - 2, W - BORDER*2 + 4, H - BORDER*2 + 4);
+            ctx.strokeStyle = 'rgba(200,160,80,0.45)';
+            ctx.lineWidth = 3.5;
+            ctx.strokeRect(BORDER - 3, BORDER - 3, W - BORDER*2 + 6, H - BORDER*2 + 6);
 
-            // Linha central
-            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([8, 12]);
+            ctx.strokeStyle = 'rgba(180,140,70,0.25)';
+            ctx.lineWidth = 1.5;
+            const inset = 14;
+            for (let x = BORDER + 20; x < W - BORDER - 20; x += 28) {
+                ctx.beginPath();
+                ctx.moveTo(x, inset);
+                ctx.lineTo(x + 8, inset + 6);
+                ctx.lineTo(x + 16, inset);
+                ctx.stroke();
+            }
+            for (let x = BORDER + 20; x < W - BORDER - 20; x += 28) {
+                ctx.beginPath();
+                ctx.moveTo(x, H - inset);
+                ctx.lineTo(x + 8, H - inset - 6);
+                ctx.lineTo(x + 16, H - inset);
+                ctx.stroke();
+            }
+            for (let y = BORDER + 20; y < H - BORDER - 20; y += 28) {
+                ctx.beginPath();
+                ctx.moveTo(inset, y);
+                ctx.lineTo(inset + 6, y + 8);
+                ctx.lineTo(inset, y + 16);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(W - inset, y);
+                ctx.lineTo(W - inset - 6, y + 8);
+                ctx.lineTo(W - inset, y + 16);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 10]);
             ctx.beginPath();
-            ctx.moveTo(W/2, BORDER + 16);
-            ctx.lineTo(W/2, H - BORDER - 16);
+            ctx.moveTo(W/2, BORDER + 14);
+            ctx.lineTo(W/2, H - BORDER - 14);
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Círculo de saque
-            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = 'rgba(255,255,255,0.07)';
             ctx.beginPath();
-            ctx.arc(230, H/2, 55, 0, Math.PI * 2);
+            ctx.arc(230, H/2, 52, 0, Math.PI * 2);
             ctx.stroke();
 
-            // Caçapas
             pockets.forEach(p => {
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, POCKET_RADIUS + 3, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.arc(p.x, p.y, POCKET_RADIUS + 5, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,0,0,0.55)';
                 ctx.fill();
 
-                const pocketGrad = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, POCKET_RADIUS);
-                pocketGrad.addColorStop(0, '#0a0a0a');
-                pocketGrad.addColorStop(0.7, '#111');
+                const pocketGrad = ctx.createRadialGradient(p.x - 2, p.y - 2, 1, p.x, p.y, POCKET_RADIUS);
+                pocketGrad.addColorStop(0, '#050505');
+                pocketGrad.addColorStop(0.6, '#0e0e0e');
                 pocketGrad.addColorStop(1, '#1a1a1a');
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2);
                 ctx.fillStyle = pocketGrad;
                 ctx.fill();
 
-                ctx.strokeStyle = 'rgba(100,80,50,0.5)';
-                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = 'rgba(140,110,60,0.55)';
+                ctx.lineWidth = 2.8;
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, POCKET_RADIUS + 1, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, POCKET_RADIUS + 1.5, 0, Math.PI * 2);
                 ctx.stroke();
             });
         }
@@ -1095,7 +1376,7 @@
                     const dist = Math.hypot(dx, dy);
                     if (dist < a.radius + b.radius && dist > 0) {
                         const speed = Math.hypot(a.vx, a.vy) + Math.hypot(b.vx, b.vy);
-                        playSound(110 + speed * 7, 0.22, 'triangle', Math.min(0.95, speed/20));
+                        playSound(110 + speed * 7, 0.2, 'triangle', Math.min(0.9, speed/18));
 
                         const angle = Math.atan2(dy, dx);
                         const sin = Math.sin(angle), cos = Math.cos(angle);
@@ -1121,22 +1402,24 @@
             for (let ball of balls) {
                 if (ball.sunk) continue;
                 for (let p of pockets) {
-                    if (Math.hypot(ball.x - p.x, ball.y - p.y) < POCKET_RADIUS + BALL_RADIUS - 6) {
+                    if (Math.hypot(ball.x - p.x, ball.y - p.y) < POCKET_RADIUS + BALL_RADIUS - 5) {
                         ball.sunk = true;
                         ball.vx = ball.vy = 0;
 
                         if (ball.number === 0) {
                             shotCueSunk = true;
                             respawnCueBall();
-                            playSound(180, 0.8, 'sine', 0.6);
+                            playSound(180, 0.75, 'sine', 0.55);
                         } else if (ball.number === 8) {
                             shotEightSunk = true;
-                            playSound(65, 0.65, 'sine', 0.95);
+                            playSound(60, 0.7, 'sine', 0.95);
                             addBallToTube(8);
+                            totalPoints += 50;
                         } else {
                             sunkBalls++;
-                            playSound(65, 0.65, 'sine', 0.95);
+                            playSound(65, 0.6, 'sine', 0.9);
                             addBallToTube(ball.number);
+                            totalPoints += 10;
 
                             if (!playerGroups[currentPlayer]) {
                                 playerGroups[currentPlayer] = ball.number <= 7 ? 'solid' : 'stripe';
@@ -1146,10 +1429,12 @@
                             const group = playerGroups[currentPlayer];
                             const isMyGroup = !group ||
                                 (group === 'solid' && ball.number <= 7) ||
-                                (group === 'stripe' && ball.number > 8);
+                                (group === 'stripe' && ball.number >= 9);
 
                             if (isMyGroup) shotSunkValid++;
                         }
+                        updateBallsStatus();
+                        updateUI();
                         break;
                     }
                 }
@@ -1159,32 +1444,34 @@
         function addBallToTube(num) {
             if (sunkBallList.includes(num)) return;
             sunkBallList.push(num);
-
             const container = document.getElementById('sunk-balls');
             if (!container) return;
 
             const el = document.createElement('div');
             el.className = 'tube-ball';
             const color = ballColors[num] || '#333';
-            el.style.background = `radial-gradient(circle at 35% 30%, ${lighten(color, 35)}, ${color} 55%, ${darken(color, 20)})`;
+
+            if (num >= 9) {
+                el.style.background = `linear-gradient(180deg, #f5f5f5 0%, #f5f5f5 28%, ${color} 28%, ${color} 72%, #f5f5f5 72%)`;
+            } else {
+                el.style.background = `radial-gradient(circle at 35% 30%, ${lighten(color, 35)}, ${color} 55%, ${darken(color, 20)})`;
+            }
             el.style.color = num === 8 ? '#fff' : '#111';
 
             if (num !== 8) {
                 el.innerHTML = `<span style="
                     display:flex;align-items:center;justify-content:center;
-                    width:16px;height:16px;border-radius:50%;
+                    width:15px;height:15px;border-radius:50%;
                     background:rgba(255,255,255,0.95);
-                    font-size:10px;font-weight:800;color:#111;
-                    box-shadow:0 0 2px rgba(0,0,0,0.3);
+                    font-size:9px;font-weight:800;color:#111;
                 ">${num}</span>`;
             } else {
-                el.textContent = num;
+                el.textContent = '8';
             }
             container.appendChild(el);
         }
 
         function updateBallTube() {
-            // só limpa (usado no reinício)
             const container = document.getElementById('sunk-balls');
             if (container) container.innerHTML = '';
         }
@@ -1199,10 +1486,9 @@
         }
 
         function allBallsStopped() {
-            return balls.every(b => b.sunk || (Math.abs(b.vx) < 0.1 && Math.abs(b.vy) < 0.1));
+            return balls.every(b => b.sunk || (Math.abs(b.vx) < 0.09 && Math.abs(b.vy) < 0.09));
         }
 
-        // Encontra a primeira bola que a mira "relar" (raio de colisão)
         function findAimTarget(dirX, dirY) {
             let best = null;
             let bestDist = Infinity;
@@ -1210,41 +1496,24 @@
 
             for (const ball of balls) {
                 if (ball.sunk || ball === cueBall) continue;
-
-                // Vetor do cue até a bola
                 const bx = ball.x - cueBall.x;
                 const by = ball.y - cueBall.y;
-
-                // Projeção na direção da mira
                 const proj = bx * dirX + by * dirY;
-                if (proj < BALL_RADIUS) continue; // atrás ou muito perto
-
-                // Distância perpendicular ao raio
+                if (proj < BALL_RADIUS) continue;
                 const closestX = cueBall.x + dirX * proj;
                 const closestY = cueBall.y + dirY * proj;
                 const perpDist = Math.hypot(ball.x - closestX, ball.y - closestY);
-
                 if (perpDist < rSum) {
-                    // Distância real até o ponto de contato
                     const offset = Math.sqrt(rSum * rSum - perpDist * perpDist);
                     const hitDist = proj - offset;
                     if (hitDist > 0 && hitDist < bestDist) {
                         bestDist = hitDist;
-                        // Ponto de contato (ghost ball position)
                         const contactX = cueBall.x + dirX * hitDist;
                         const contactY = cueBall.y + dirY * hitDist;
-                        // Normal da colisão (do contato até o centro da bola alvo)
                         const nx = ball.x - contactX;
                         const ny = ball.y - contactY;
                         const nLen = Math.hypot(nx, ny) || 1;
-                        best = {
-                            ball,
-                            hitDist,
-                            contactX,
-                            contactY,
-                            nx: nx / nLen,
-                            ny: ny / nLen
-                        };
+                        best = { ball, hitDist, contactX, contactY, nx: nx / nLen, ny: ny / nLen };
                     }
                 }
             }
@@ -1254,39 +1523,23 @@
         function drawCrosshair(x, y, size, color, alpha) {
             const gap = size * 0.35;
             ctx.strokeStyle = color.replace('ALPHA', alpha);
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 1.8;
             ctx.lineCap = 'round';
-
-            // Círculo externo
             ctx.beginPath();
-            ctx.arc(x, y, size + 3, 0, Math.PI * 2);
+            ctx.arc(x, y, size + 2, 0, Math.PI * 2);
             ctx.stroke();
-
-            // Círculo interno
             ctx.beginPath();
-            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.arc(x, y, 2.5, 0, Math.PI * 2);
             ctx.stroke();
-
-            // Cruz horizontal
             ctx.beginPath();
-            ctx.moveTo(x - size - 1, y);
-            ctx.lineTo(x - gap, y);
-            ctx.moveTo(x + gap, y);
-            ctx.lineTo(x + size + 1, y);
+            ctx.moveTo(x - size - 1, y); ctx.lineTo(x - gap, y);
+            ctx.moveTo(x + gap, y); ctx.lineTo(x + size + 1, y);
+            ctx.moveTo(x, y - size - 1); ctx.lineTo(x, y - gap);
+            ctx.moveTo(x, y + gap); ctx.lineTo(x, y + size + 1);
             ctx.stroke();
-
-            // Cruz vertical
-            ctx.beginPath();
-            ctx.moveTo(x, y - size - 1);
-            ctx.lineTo(x, y - gap);
-            ctx.moveTo(x, y + gap);
-            ctx.lineTo(x, y + size + 1);
-            ctx.stroke();
-
-            // Ponto central
             ctx.fillStyle = `rgba(255, 70, 50, ${alpha})`;
             ctx.beginPath();
-            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.arc(x, y, 1.8, 0, Math.PI * 2);
             ctx.fill();
         }
 
@@ -1297,7 +1550,7 @@
             const dx = cueBall.x - aimStartX;
             const dy = cueBall.y - aimStartY;
             const dist = Math.hypot(dx, dy);
-            const power = Math.min(dist / 4.8, 100);
+            const power = Math.min(dist / 4.6, 100);
             const angle = Math.atan2(dy, dx);
             const dirX = Math.cos(angle);
             const dirY = Math.sin(angle);
@@ -1312,147 +1565,114 @@
                 ctx.stroke();
             }
 
-            ctx.shadowBlur = 16;
-            ctx.shadowColor = 'rgba(0,0,0,0.7)';
+            ctx.shadowBlur = 14;
+            ctx.shadowColor = 'rgba(0,0,0,0.65)';
 
-            const tipStart = 30, tipEnd = 48;
-            const shaftStart = tipEnd, shaftEnd = 95 + power * 1.6;
-            const gripStart = shaftEnd, gripEnd = shaftEnd + 55;
-            const buttStart = gripEnd, buttEnd = gripEnd + 38;
+            const tipStart = 28, tipEnd = 46;
+            const shaftStart = tipEnd, shaftEnd = 90 + power * 1.55;
+            const gripStart = shaftEnd, gripEnd = shaftEnd + 52;
+            const buttStart = gripEnd, buttEnd = gripEnd + 36;
 
-            drawSegment(tipStart, tipEnd, cue.tip, 4.5);
-            drawSegment(shaftStart, shaftEnd, cue.shaft, 6.5);
+            drawSegment(tipStart, tipEnd, cue.tip, 4.2);
+            drawSegment(shaftStart, shaftEnd, cue.shaft, 6.2);
 
-            const ringPositions = [shaftEnd - 8, shaftEnd - 18, shaftEnd - 28];
+            const ringPositions = [shaftEnd - 7, shaftEnd - 16, shaftEnd - 26];
             cue.rings.forEach((ringColor, i) => {
                 if (ringPositions[i] !== undefined) {
-                    drawSegment(ringPositions[i] - 2.5, ringPositions[i] + 2.5, ringColor, 8.5);
+                    drawSegment(ringPositions[i] - 2.2, ringPositions[i] + 2.2, ringColor, 8);
                 }
             });
 
-            drawSegment(gripStart, gripEnd, cue.grip, 9);
-            ctx.lineWidth = 1.2;
+            drawSegment(gripStart, gripEnd, cue.grip, 8.5);
+            ctx.lineWidth = 1.1;
             ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-            for (let i = 0; i < 6; i++) {
-                const t = gripStart + 8 + i * 7;
+            for (let i = 0; i < 5; i++) {
+                const t = gripStart + 7 + i * 7;
                 ctx.beginPath();
                 ctx.moveTo(cueBall.x - dirX * t, cueBall.y - dirY * t);
-                ctx.lineTo(cueBall.x - dirX * (t + 3), cueBall.y - dirY * (t + 3));
+                ctx.lineTo(cueBall.x - dirX * (t + 2.5), cueBall.y - dirY * (t + 2.5));
                 ctx.stroke();
             }
 
-            drawSegment(buttStart, buttEnd, cue.butt, 11);
-            drawSegment(buttEnd - 6, buttEnd - 2, cue.rings[0] || '#ccc', 12);
+            drawSegment(buttStart, buttEnd, cue.butt, 10.5);
+            drawSegment(buttEnd - 5, buttEnd - 1.5, cue.rings[0] || '#ccc', 11.5);
 
             ctx.shadowBlur = 0;
 
-            // ===== MIRA =====
             const aimAlpha = 0.85 - power / 280;
             const target = findAimTarget(dirX, dirY);
+            const lineEnd = target ? target.hitDist : 860;
 
-            // Linha tracejada até o alvo (ou longa se não houver)
-            const lineEnd = target ? target.hitDist : 880;
             const aimGrad = ctx.createLinearGradient(
                 cueBall.x, cueBall.y,
-                cueBall.x + dirX * Math.min(lineEnd, 450), cueBall.y + dirY * Math.min(lineEnd, 450)
+                cueBall.x + dirX * Math.min(lineEnd, 420), cueBall.y + dirY * Math.min(lineEnd, 420)
             );
             aimGrad.addColorStop(0, `rgba(255, 240, 100, ${aimAlpha})`);
-            aimGrad.addColorStop(1, target ? `rgba(255, 240, 100, ${aimAlpha * 0.7})` : 'rgba(255, 240, 100, 0)');
+            aimGrad.addColorStop(1, target ? `rgba(255, 240, 100, ${aimAlpha * 0.65})` : 'rgba(255, 240, 100, 0)');
             ctx.strokeStyle = aimGrad;
-            ctx.lineWidth = 1.8;
-            ctx.setLineDash([4, 14]);
+            ctx.lineWidth = 1.7;
+            ctx.setLineDash([4, 12]);
             ctx.beginPath();
-            ctx.moveTo(cueBall.x + dirX * 18, cueBall.y + dirY * 18);
+            ctx.moveTo(cueBall.x + dirX * 16, cueBall.y + dirY * 16);
             ctx.lineTo(cueBall.x + dirX * lineEnd, cueBall.y + dirY * lineEnd);
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Anel na bola branca
-            ctx.strokeStyle = `rgba(255, 245, 120, 0.35)`;
-            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = `rgba(255, 245, 120, 0.3)`;
+            ctx.lineWidth = 1.4;
             ctx.beginPath();
-            ctx.arc(cueBall.x, cueBall.y, BALL_RADIUS + 6, 0, Math.PI * 2);
+            ctx.arc(cueBall.x, cueBall.y, BALL_RADIUS + 5, 0, Math.PI * 2);
             ctx.stroke();
 
             if (target) {
-                // --- SEGUNDA MIRA na bola alvo ---
-                // Ghost ball (posição da branca no momento do contato)
                 ctx.beginPath();
                 ctx.arc(target.contactX, target.contactY, BALL_RADIUS, 0, Math.PI * 2);
-                ctx.strokeStyle = `rgba(255, 255, 255, ${0.25})`;
-                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = `rgba(255,255,255,0.22)`;
+                ctx.lineWidth = 1.4;
                 ctx.setLineDash([3, 4]);
                 ctx.stroke();
                 ctx.setLineDash([]);
 
-                // Mira na bola alvo
-                drawCrosshair(
-                    target.ball.x, target.ball.y,
-                    12,
-                    `rgba(100, 220, 255, ALPHA)`,
-                    aimAlpha
-                );
+                drawCrosshair(target.ball.x, target.ball.y, 11, `rgba(100, 220, 255, ALPHA)`, aimAlpha);
 
-                // Linha de previsão: direção que a bola alvo vai
-                const predLen = 90 + power * 0.6;
+                const predLen = 85 + power * 0.55;
                 const predGrad = ctx.createLinearGradient(
                     target.ball.x, target.ball.y,
                     target.ball.x + target.nx * predLen,
                     target.ball.y + target.ny * predLen
                 );
-                predGrad.addColorStop(0, `rgba(100, 220, 255, ${aimAlpha * 0.9})`);
+                predGrad.addColorStop(0, `rgba(100, 220, 255, ${aimAlpha * 0.85})`);
                 predGrad.addColorStop(1, 'rgba(100, 220, 255, 0)');
                 ctx.strokeStyle = predGrad;
-                ctx.lineWidth = 2.2;
-                ctx.setLineDash([5, 10]);
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 9]);
                 ctx.beginPath();
                 ctx.moveTo(target.ball.x, target.ball.y);
-                ctx.lineTo(
-                    target.ball.x + target.nx * predLen,
-                    target.ball.y + target.ny * predLen
-                );
+                ctx.lineTo(target.ball.x + target.nx * predLen, target.ball.y + target.ny * predLen);
                 ctx.stroke();
                 ctx.setLineDash([]);
-
-                // Pequena seta no fim da previsão
-                const ax = target.ball.x + target.nx * (predLen * 0.7);
-                const ay = target.ball.y + target.ny * (predLen * 0.7);
-                ctx.fillStyle = `rgba(100, 220, 255, ${aimAlpha * 0.7})`;
-                ctx.beginPath();
-                ctx.arc(ax, ay, 3, 0, Math.PI * 2);
-                ctx.fill();
-
             } else {
-                // Mira livre (sem bola no caminho)
-                const miraDist = 110 + power * 0.7;
-                drawCrosshair(
-                    cueBall.x + dirX * miraDist,
-                    cueBall.y + dirY * miraDist,
-                    13,
-                    `rgba(255, 245, 120, ALPHA)`,
-                    aimAlpha
-                );
+                const miraDist = 105 + power * 0.65;
+                drawCrosshair(cueBall.x + dirX * miraDist, cueBall.y + dirY * miraDist, 12, `rgba(255, 245, 120, ALPHA)`, aimAlpha);
             }
 
-            // Barra de força
-            const barX = cueBall.x - 22;
-            const barY = cueBall.y - 55;
-            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            const barX = cueBall.x - 20;
+            const barY = cueBall.y - 50;
+            ctx.fillStyle = 'rgba(0,0,0,0.55)';
             ctx.beginPath();
-            ctx.roundRect(barX, barY, 44, 10, 4);
+            ctx.roundRect(barX, barY, 40, 9, 4);
             ctx.fill();
-
-            const fillW = 40 * (power / 100);
+            const fillW = 36 * (power / 100);
             const powerColor = power > 80 ? '#ef4444' : power > 50 ? '#f59e0b' : '#22c55e';
             ctx.fillStyle = powerColor;
             ctx.beginPath();
-            ctx.roundRect(barX + 2, barY + 2, fillW, 6, 3);
+            ctx.roundRect(barX + 2, barY + 2, fillW, 5, 2);
             ctx.fill();
         }
 
         function showFoul() {
             foulMessage.style.display = 'block';
-            setTimeout(() => foulMessage.style.display = 'none', 1400);
+            setTimeout(() => foulMessage.style.display = 'none', 1300);
         }
 
         function switchPlayer() {
@@ -1468,18 +1688,13 @@
             const group = playerGroups[currentPlayer];
             const hasGroupBallsLeft = balls.some(b =>
                 !b.sunk && b.number !== 0 && b.number !== 8 &&
-                ((group === 'solid' && b.number <= 7) || (group === 'stripe' && b.number > 8))
+                ((group === 'solid' && b.number <= 7) || (group === 'stripe' && b.number >= 9))
             );
 
             gameWon = true;
             const isLoss = hasGroupBallsLeft;
             const color = currentPlayer === 1 ? '#4fc3f7' : '#ffb74d';
-            let name;
-            if (vsCPU) {
-                name = currentPlayer === 1 ? 'VOCÊ' : 'CPU';
-            } else {
-                name = `JOGADOR ${currentPlayer}`;
-            }
+            let name = vsCPU ? (currentPlayer === 1 ? 'VOCÊ' : 'CPU') : `JOGADOR ${currentPlayer}`;
 
             winMessage.className = isLoss ? 'loss' : '';
             winMessage.style.color = color;
@@ -1492,9 +1707,7 @@
                    <button class="play-again-btn" id="play-again-btn">Jogar de novo</button>`;
             winMessage.style.display = 'block';
 
-            document.getElementById('play-again-btn').addEventListener('click', () => {
-                createBalls();
-            });
+            document.getElementById('play-again-btn').addEventListener('click', () => createBalls());
         }
 
         function endShot() {
@@ -1504,7 +1717,6 @@
             if (shotCueSunk) {
                 showFoul();
                 switchPlayer();
-                // Adversário recebe bola na mão
                 ballInHand = true;
                 isPlacing = false;
                 if (cueBall) {
@@ -1521,21 +1733,15 @@
             shotCueSunk = false;
             shotEightSunk = false;
 
-            // Se for a vez da CPU, ela joga
-            if (!gameWon && isCPUTurn()) {
-                scheduleCPUTurn();
-            }
+            if (!gameWon && isCPUTurn()) scheduleCPUTurn();
         }
 
         function isValidCuePosition(x, y) {
-            // dentro da mesa
             if (x - BALL_RADIUS < BORDER || x + BALL_RADIUS > W - BORDER) return false;
             if (y - BALL_RADIUS < BORDER || y + BALL_RADIUS > H - BORDER) return false;
-            // longe das caçapas
             for (const p of pockets) {
                 if (Math.hypot(x - p.x, y - p.y) < POCKET_RADIUS + BALL_RADIUS - 2) return false;
             }
-            // sem sobrepor outras bolas
             for (const b of balls) {
                 if (b.sunk || b === cueBall) continue;
                 if (Math.hypot(x - b.x, y - b.y) < BALL_RADIUS * 2 + 1) return false;
@@ -1545,15 +1751,13 @@
 
         function placeCueBall(x, y) {
             if (!cueBall) return;
-            // se a posição for inválida, tenta manter a anterior ou busca próxima válida
             if (isValidCuePosition(x, y)) {
                 cueBall.x = x;
                 cueBall.y = y;
             } else {
-                // tenta posição mais próxima válida (pequena busca)
                 let best = null, bestD = Infinity;
-                for (let a = 0; a < 360; a += 15) {
-                    for (let r = 0; r <= 40; r += 8) {
+                for (let a = 0; a < 360; a += 12) {
+                    for (let r = 0; r <= 45; r += 7) {
                         const px = x + Math.cos(a * Math.PI / 180) * r;
                         const py = y + Math.sin(a * Math.PI / 180) * r;
                         if (isValidCuePosition(px, py)) {
@@ -1562,70 +1766,52 @@
                         }
                     }
                 }
-                if (best) {
-                    cueBall.x = best.x;
-                    cueBall.y = best.y;
-                }
+                if (best) { cueBall.x = best.x; cueBall.y = best.y; }
             }
             cueBall.vx = 0;
             cueBall.vy = 0;
             cueBall.sunk = false;
         }
 
-        function gameLoop() {
-            ctx.clearRect(0, 0, W, H);
-            drawTable();
-
-            balls.forEach(ball => {
-                ball.update();
-                ball.draw();
-            });
-
-            checkCollisions();
-            checkPockets();
-
-            if (isAiming) drawCueStick();
-            if (ballInHand && cueBall && !cueBall.sunk && !isCPUTurn() && !cpuThinking) drawBallInHandHint();
-
-            if (shotActive && allBallsStopped() && !gameWon) {
-                endShot();
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-
         function drawBallInHandHint() {
             if (!cueBall) return;
             const t = Date.now() / 400;
             const pulse = 0.4 + Math.sin(t) * 0.25;
-
-            // anel pulsante
             ctx.beginPath();
-            ctx.arc(cueBall.x, cueBall.y, BALL_RADIUS + 8 + Math.sin(t) * 3, 0, Math.PI * 2);
+            ctx.arc(cueBall.x, cueBall.y, BALL_RADIUS + 7 + Math.sin(t) * 2.5, 0, Math.PI * 2);
             ctx.strokeStyle = `rgba(255, 183, 77, ${pulse})`;
-            ctx.lineWidth = 2.5;
+            ctx.lineWidth = 2.3;
             ctx.stroke();
-
             ctx.beginPath();
-            ctx.arc(cueBall.x, cueBall.y, BALL_RADIUS + 14 + Math.sin(t) * 2, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(255, 183, 77, ${pulse * 0.5})`;
-            ctx.lineWidth = 1.5;
+            ctx.arc(cueBall.x, cueBall.y, BALL_RADIUS + 13 + Math.sin(t) * 1.8, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 183, 77, ${pulse * 0.45})`;
+            ctx.lineWidth = 1.4;
             ctx.stroke();
-
-            // texto
-            ctx.font = 'bold 13px Outfit, Arial';
+            ctx.font = 'bold 12px Outfit, Arial';
             ctx.textAlign = 'center';
             ctx.fillStyle = `rgba(255, 200, 100, ${0.7 + Math.sin(t) * 0.2})`;
-            ctx.fillText('Arraste a branca', cueBall.x, cueBall.y - BALL_RADIUS - 22);
-            ctx.font = '11px Outfit, Arial';
-            ctx.fillStyle = `rgba(200, 200, 200, ${0.5 + Math.sin(t) * 0.15})`;
-            ctx.fillText('depois mire e bata', cueBall.x, cueBall.y - BALL_RADIUS - 8);
+            ctx.fillText('Arraste a branca', cueBall.x, cueBall.y - BALL_RADIUS - 20);
+            ctx.font = '10px Outfit, Arial';
+            ctx.fillStyle = `rgba(180, 180, 180, ${0.5 + Math.sin(t) * 0.15})`;
+            ctx.fillText('depois mire e bata', cueBall.x, cueBall.y - BALL_RADIUS - 7);
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, W, H);
+            drawTable();
+            balls.forEach(ball => { ball.update(); ball.draw(); });
+            checkCollisions();
+            checkPockets();
+            if (isAiming) drawCueStick();
+            if (ballInHand && cueBall && !cueBall.sunk && !isCPUTurn() && !cpuThinking) drawBallInHandHint();
+            if (shotActive && allBallsStopped() && !gameWon) endShot();
+            requestAnimationFrame(gameLoop);
         }
 
         function startAim(x, y) {
             if (gameWon || !cueBall || !allBallsStopped() || cueBall.sunk || shotActive) return;
-            if (cpuThinking || isCPUTurn()) return; // não deixa o jogador mirar na vez da CPU
-            if (ballInHand) return; // precisa terminar de posicionar / começar mira só após soltar
+            if (cpuThinking || isCPUTurn()) return;
+            if (ballInHand) return;
             isAiming = true;
             aimStartX = x;
             aimStartY = y;
@@ -1636,7 +1822,7 @@
             const cue = cues[selectedCue];
             const dx = cueBall.x - x;
             const dy = cueBall.y - y;
-            const basePower = 0.148 * cue.power;
+            const basePower = 0.145 * cue.power;
             cueBall.vx = dx * basePower;
             cueBall.vy = dy * basePower;
             isAiming = false;
@@ -1651,11 +1837,13 @@
 
         function pointerPos(e) {
             const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
             const clientX = e.clientX ?? e.touches?.[0]?.clientX ?? e.changedTouches?.[0]?.clientX;
             const clientY = e.clientY ?? e.touches?.[0]?.clientY ?? e.changedTouches?.[0]?.clientY;
             return {
-                x: clientX - rect.left,
-                y: clientY - rect.top
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
             };
         }
 
@@ -1663,38 +1851,32 @@
             canvas.addEventListener(ev, e => {
                 e.preventDefault();
                 const { x, y } = pointerPos(e);
-
                 if (cpuThinking || isCPUTurn()) return;
 
-                // Modo bola na mão: se clicou perto da branca → arrastar
                 if (ballInHand && cueBall && !cueBall.sunk && allBallsStopped()) {
                     const dist = Math.hypot(x - cueBall.x, y - cueBall.y);
-                    if (dist < BALL_RADIUS + 18) {
+                    if (dist < BALL_RADIUS + 16) {
                         isPlacing = true;
                         isAiming = false;
                         placeCueBall(x, y);
                         return;
                     }
-                    // clicou longe da branca → começa a mirar (confirma posição)
                     ballInHand = false;
                     isPlacing = false;
                     updateUI();
                     startAim(x, y);
                     return;
                 }
-
                 startAim(x, y);
             }, { passive: false });
         });
 
         function onPointerMove(e) {
             const { x, y } = pointerPos(e);
-
             if (isPlacing && ballInHand && cueBall) {
                 placeCueBall(x, y);
                 return;
             }
-
             if (isAiming) {
                 aimStartX = x;
                 aimStartY = y;
@@ -1702,21 +1884,15 @@
         }
 
         canvas.addEventListener('mousemove', onPointerMove);
-        canvas.addEventListener('touchmove', e => {
-            e.preventDefault();
-            onPointerMove(e);
-        }, { passive: false });
+        canvas.addEventListener('touchmove', e => { e.preventDefault(); onPointerMove(e); }, { passive: false });
 
         ['mouseup', 'touchend'].forEach(ev => {
             canvas.addEventListener(ev, e => {
                 e.preventDefault();
-
                 if (isPlacing) {
-                    // soltou a branca — continua em bola na mão até mirar
                     isPlacing = false;
                     return;
                 }
-
                 if (!isAiming) return;
                 const { x, y } = pointerPos(e);
                 shoot(x, y);
@@ -1725,21 +1901,17 @@
 
         document.addEventListener('keydown', e => {
             if (e.key.toLowerCase() === 'r') createBalls();
-            if (e.key === 'Escape') {
-                document.getElementById('rules-overlay').classList.remove('show');
-            }
+            if (e.key === 'Escape') document.getElementById('rules-overlay').classList.remove('show');
         });
 
-        // Modo 2 jogadores / vs CPU
         document.getElementById('mode-btn').addEventListener('click', () => {
             vsCPU = !vsCPU;
             const btn = document.getElementById('mode-btn');
-            btn.textContent = vsCPU ? 'Modo: vs CPU' : 'Modo: 2 Jogadores';
+            btn.textContent = vsCPU ? 'vs CPU' : '2 Jogadores';
             btn.classList.toggle('active', vsCPU);
-            createBalls(); // reinicia a partida ao trocar de modo
+            createBalls();
         });
 
-        // Modal de regras
         document.getElementById('rules-btn').addEventListener('click', () => {
             document.getElementById('rules-overlay').classList.add('show');
         });
@@ -1747,12 +1919,11 @@
             document.getElementById('rules-overlay').classList.remove('show');
         });
         document.getElementById('rules-overlay').addEventListener('click', e => {
-            if (e.target.id === 'rules-overlay') {
-                e.target.classList.remove('show');
-            }
+            if (e.target.id === 'rules-overlay') e.target.classList.remove('show');
         });
+        document.getElementById('reset-btn').addEventListener('click', () => createBalls());
 
-        buildCueButtons();
+        buildCueRack();
         createBalls();
         gameLoop();
     </script>
