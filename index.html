@@ -422,6 +422,15 @@
             box-shadow: 0 8px 0 rgba(0,0,0,0.3), 0 12px 28px rgba(0,0,0,0.3);
         }
         .btn-play:active { transform: translateY(4px); }
+        .btn-online {
+            background: linear-gradient(180deg, #818cf8 0%, #4f46e5 100%);
+            color: #fff;
+            font-size: 16px;
+            text-shadow: 0 1px 0 rgba(0,0,0,0.2);
+        }
+        .btn-online:hover {
+            background: linear-gradient(180deg, #a5b4fc 0%, #6366f1 100%);
+        }
         .btn-secondary {
             background: linear-gradient(180deg, #3dd68c 0%, #22a06b 100%);
             color: #fff;
@@ -852,6 +861,85 @@
             color: #94a3b8;
             margin-top: 10px;
             font-weight: 500;
+        }
+
+        /* ===================== ONLINE ===================== */
+        #online-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none; align-items: center; justify-content: center;
+            z-index: 270; backdrop-filter: blur(6px);
+        }
+        #online-overlay.show { display: flex; }
+        #online-modal {
+            background: linear-gradient(165deg, #1a1a2e 0%, #0f0f1a 100%);
+            border: 1px solid rgba(129,140,248,0.35);
+            border-radius: 22px;
+            width: 92%; max-width: 400px;
+            padding: 22px 20px 20px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 40px rgba(99,102,241,0.15);
+            animation: popIn 0.3s ease;
+            text-align: center;
+        }
+        .online-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .online-header h3 {
+            font-size: 18px; font-weight: 800;
+            background: linear-gradient(135deg, #818cf8, #38bdf8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .online-close {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+            color: #94a3b8; width: 32px; height: 32px; border-radius: 10px;
+            font-size: 16px; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; font-family: inherit;
+        }
+        .online-close:hover { background: rgba(239,68,68,0.2); color: #f87171; }
+        .online-info {
+            font-size: 12px; color: #94a3b8; line-height: 1.5; margin-bottom: 14px;
+        }
+        .online-status {
+            font-size: 13px; font-weight: 700; color: #a5b4fc;
+            min-height: 22px; margin-bottom: 12px;
+        }
+        .online-code-box {
+            background: rgba(0,0,0,0.35);
+            border: 1px dashed rgba(129,140,248,0.4);
+            border-radius: 14px; padding: 16px; margin-bottom: 14px;
+        }
+        .online-code-label { font-size: 11px; color: #64748b; margin-bottom: 6px; font-weight: 600; }
+        .online-code {
+            font-size: 32px; font-weight: 800; letter-spacing: 6px;
+            color: #fbbf24; font-family: monospace;
+        }
+        .online-code-hint { font-size: 11px; color: #64748b; margin-top: 6px; }
+        .online-join-box { margin-bottom: 14px; }
+        .online-join-box input {
+            width: 100%; padding: 14px; text-align: center;
+            font-size: 22px; font-weight: 800; letter-spacing: 4px;
+            text-transform: uppercase; font-family: monospace;
+            background: rgba(0,0,0,0.35); border: 1px solid rgba(129,140,248,0.35);
+            border-radius: 12px; color: #e2e8f0; outline: none;
+        }
+        .online-join-box input:focus { border-color: #818cf8; }
+        .online-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .online-btn {
+            padding: 12px 22px; border: none; border-radius: 12px;
+            font-family: inherit; font-size: 14px; font-weight: 800;
+            cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+        }
+        .online-btn-host {
+            background: linear-gradient(180deg, #818cf8, #4f46e5); color: #fff;
+        }
+        .online-btn-host:hover { background: linear-gradient(180deg, #a5b4fc, #6366f1); }
+        .online-btn-join {
+            background: linear-gradient(180deg, #38bdf8, #0284c7); color: #fff;
+        }
+        .online-btn-join:hover { background: linear-gradient(180deg, #7dd3fc, #0ea5e9); }
+        .online-btn-cancel {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1;
         }
 
         /* ===================== TORNEIOS ===================== */
@@ -1493,8 +1581,43 @@
 
         <div class="menu-buttons">
             <button class="menu-btn btn-play" id="btn-play">▶  Jogar</button>
+            <button class="menu-btn btn-online" id="btn-online">🌐  Jogar Online</button>
             <button class="menu-btn btn-secondary" id="btn-tournaments">🏆  Torneios</button>
             <button class="menu-btn btn-shop" id="btn-shop">🎱  Loja da Sinuca</button>
+        </div>
+    </div>
+
+    <!-- ONLINE -->
+    <div id="online-overlay">
+        <div id="online-modal">
+            <div class="online-header">
+                <h3>🌐 Jogar Online</h3>
+                <button class="online-close" id="online-close">✕</button>
+            </div>
+            <div class="online-info">
+                Jogue com um amigo em outro computador.<br>
+                Um cria a sala e o outro entra com o código.
+            </div>
+            <div class="online-status" id="online-status">Escolha uma opção</div>
+            <div class="online-code-box" id="online-code-box" style="display:none;">
+                <div class="online-code-label">Código da sala</div>
+                <div class="online-code" id="online-code">------</div>
+                <div class="online-code-hint">Envie este código para o amigo</div>
+            </div>
+            <div class="online-join-box" id="online-join-box" style="display:none;">
+                <input type="text" id="online-join-input" maxlength="6" placeholder="Código (6 letras)" autocomplete="off">
+            </div>
+            <div class="online-actions" id="online-actions">
+                <button class="online-btn online-btn-host" id="online-host-btn">Criar sala</button>
+                <button class="online-btn online-btn-join" id="online-join-btn">Entrar na sala</button>
+            </div>
+            <div class="online-actions" id="online-join-confirm" style="display:none;">
+                <button class="online-btn online-btn-host" id="online-connect-btn">Conectar</button>
+                <button class="online-btn online-btn-cancel" id="online-cancel-btn">Voltar</button>
+            </div>
+            <div class="online-actions" id="online-waiting" style="display:none;">
+                <button class="online-btn online-btn-cancel" id="online-cancel-wait-btn">Cancelar</button>
+            </div>
         </div>
     </div>
 
@@ -1629,6 +1752,7 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script>
         // ===== LOGIN + PERFIL (moedas, tacos, extras) =====
         let playerName = 'Jogador';
@@ -1778,14 +1902,302 @@
         const gameContainer = document.getElementById('game-container');
 
         document.getElementById('btn-play').addEventListener('click', () => {
+            onlineMode = false;
             menuScreen.classList.add('hidden');
             gameContainer.classList.add('visible');
             if (typeof createBalls === 'function') createBalls();
         });
 
         document.getElementById('back-menu-btn').addEventListener('click', () => {
+            if (onlineMode) disconnectOnline();
             gameContainer.classList.remove('visible');
             menuScreen.classList.remove('hidden');
+        });
+
+        // ===== ONLINE MULTIPLAYER (PeerJS) =====
+        let onlineMode = false;
+        let isHost = false;
+        let myPlayerNum = 1;
+        let onlinePeer = null;
+        let onlineConn = null;
+        let opponentName = 'Oponente';
+        let roomCode = '';
+
+        function genRoomCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+            return code;
+        }
+
+        function setOnlineStatus(msg) {
+            const el = document.getElementById('online-status');
+            if (el) el.textContent = msg;
+        }
+
+        function resetOnlineUI() {
+            document.getElementById('online-code-box').style.display = 'none';
+            document.getElementById('online-join-box').style.display = 'none';
+            document.getElementById('online-actions').style.display = 'flex';
+            document.getElementById('online-join-confirm').style.display = 'none';
+            document.getElementById('online-waiting').style.display = 'none';
+            document.getElementById('online-join-input').value = '';
+            setOnlineStatus('Escolha uma opção');
+        }
+
+        function openOnline() {
+            if (typeof Peer === 'undefined') {
+                alert('Não foi possível carregar a conexão online. Verifique a internet e recarregue a página.');
+                return;
+            }
+            resetOnlineUI();
+            document.getElementById('online-overlay').classList.add('show');
+        }
+
+        function closeOnline() {
+            if (!onlineMode) {
+                disconnectOnline();
+            }
+            document.getElementById('online-overlay').classList.remove('show');
+        }
+
+        function disconnectOnline() {
+            try { if (onlineConn) onlineConn.close(); } catch (e) {}
+            try { if (onlinePeer) onlinePeer.destroy(); } catch (e) {}
+            onlineConn = null;
+            onlinePeer = null;
+            onlineMode = false;
+            isHost = false;
+            myPlayerNum = 1;
+            opponentName = 'Oponente';
+            roomCode = '';
+        }
+
+        function sendOnline(data) {
+            if (onlineConn && onlineConn.open) {
+                try { onlineConn.send(data); } catch (e) {}
+            }
+        }
+
+        function setupConnection(conn) {
+            onlineConn = conn;
+            conn.on('open', () => {
+                onlineMode = true;
+                vsCPU = false;
+                tournamentActive = false;
+                setOnlineStatus('Conectado! Iniciando…');
+                // host envia estado inicial
+                if (isHost) {
+                    sendOnline({ type: 'hello', name: playerName });
+                    setTimeout(() => {
+                        document.getElementById('online-overlay').classList.remove('show');
+                        menuScreen.classList.add('hidden');
+                        gameContainer.classList.add('visible');
+                        createBalls();
+                        sendOnline({ type: 'start', name: playerName });
+                        if (typeof showToast === 'function') showToast('Oponente conectado!');
+                    }, 400);
+                } else {
+                    sendOnline({ type: 'hello', name: playerName });
+                }
+            });
+            conn.on('data', (data) => handleOnlineData(data));
+            conn.on('close', () => {
+                if (onlineMode) {
+                    onlineMode = false;
+                    if (typeof showToast === 'function') showToast('Oponente desconectou');
+                    gameContainer.classList.remove('visible');
+                    menuScreen.classList.remove('hidden');
+                }
+                disconnectOnline();
+            });
+            conn.on('error', () => {
+                setOnlineStatus('Erro na conexão');
+            });
+        }
+
+        function handleOnlineData(data) {
+            if (!data || !data.type) return;
+
+            if (data.type === 'hello') {
+                opponentName = data.name || 'Oponente';
+                if (typeof updateUI === 'function') updateUI();
+            }
+
+            if (data.type === 'start') {
+                opponentName = data.name || opponentName;
+                document.getElementById('online-overlay').classList.remove('show');
+                menuScreen.classList.add('hidden');
+                gameContainer.classList.add('visible');
+                createBalls();
+                if (typeof showToast === 'function') showToast('Partida online iniciada!');
+                if (typeof updateUI === 'function') updateUI();
+            }
+
+            if (data.type === 'shot') {
+                // aplica a tacada do oponente
+                if (!cueBall) return;
+                cueBall.vx = data.vx;
+                cueBall.vy = data.vy;
+                isAiming = false;
+                ballInHand = false;
+                isPlacing = false;
+                shotActive = true;
+                shotSunkValid = 0;
+                shotCueSunk = false;
+                shotEightSunk = false;
+                if (typeof updateUI === 'function') updateUI();
+            }
+
+            if (data.type === 'place') {
+                if (cueBall) {
+                    cueBall.x = data.x;
+                    cueBall.y = data.y;
+                    cueBall.vx = 0;
+                    cueBall.vy = 0;
+                    cueBall.sunk = false;
+                }
+            }
+
+            if (data.type === 'sync') {
+                // sincroniza estado completo das bolas (após fim da tacada)
+                if (data.balls && balls) {
+                    data.balls.forEach(sb => {
+                        const b = balls.find(x => x.number === sb.n);
+                        if (!b) return;
+                        b.x = sb.x; b.y = sb.y;
+                        b.vx = 0; b.vy = 0;
+                        b.sunk = sb.sunk;
+                    });
+                }
+                if (typeof data.currentPlayer === 'number') currentPlayer = data.currentPlayer;
+                if (typeof data.ballInHand === 'boolean') ballInHand = data.ballInHand;
+                if (data.playerGroups) playerGroups = data.playerGroups;
+                if (typeof data.sunkBalls === 'number') sunkBalls = data.sunkBalls;
+                if (typeof updateUI === 'function') updateUI();
+                if (typeof updateBallsStatus === 'function') updateBallsStatus();
+            }
+
+            if (data.type === 'restart') {
+                createBalls();
+            }
+        }
+
+        function isMyOnlineTurn() {
+            if (!onlineMode) return true;
+            return currentPlayer === myPlayerNum;
+        }
+
+        function hostOnline() {
+            disconnectOnline();
+            roomCode = genRoomCode();
+            isHost = true;
+            myPlayerNum = 1;
+            setOnlineStatus('Criando sala…');
+            document.getElementById('online-actions').style.display = 'none';
+            document.getElementById('online-waiting').style.display = 'flex';
+            document.getElementById('online-code-box').style.display = 'block';
+            document.getElementById('online-code').textContent = roomCode;
+
+            try {
+                onlinePeer = new Peer('sinuca-' + roomCode, { debug: 0 });
+                onlinePeer.on('open', () => {
+                    setOnlineStatus('Aguardando oponente…');
+                });
+                onlinePeer.on('connection', (conn) => {
+                    setupConnection(conn);
+                });
+                onlinePeer.on('error', (err) => {
+                    setOnlineStatus('Erro: ' + (err.type || 'falha ao criar sala'));
+                    if (err.type === 'unavailable-id') {
+                        // código já em uso, tenta outro
+                        hostOnline();
+                    }
+                });
+            } catch (e) {
+                setOnlineStatus('Falha ao iniciar conexão');
+            }
+        }
+
+        function showJoinUI() {
+            document.getElementById('online-actions').style.display = 'none';
+            document.getElementById('online-join-box').style.display = 'block';
+            document.getElementById('online-join-confirm').style.display = 'flex';
+            document.getElementById('online-code-box').style.display = 'none';
+            document.getElementById('online-waiting').style.display = 'none';
+            setOnlineStatus('Digite o código da sala');
+            document.getElementById('online-join-input').focus();
+        }
+
+        function joinOnline() {
+            const code = (document.getElementById('online-join-input').value || '').trim().toUpperCase();
+            if (code.length < 4) {
+                setOnlineStatus('Código inválido');
+                return;
+            }
+            disconnectOnline();
+            isHost = false;
+            myPlayerNum = 2;
+            roomCode = code;
+            setOnlineStatus('Conectando…');
+            document.getElementById('online-join-confirm').style.display = 'none';
+
+            try {
+                onlinePeer = new Peer({ debug: 0 });
+                onlinePeer.on('open', () => {
+                    const conn = onlinePeer.connect('sinuca-' + code, { reliable: true });
+                    setupConnection(conn);
+                    setOnlineStatus('Conectando à sala ' + code + '…');
+                });
+                onlinePeer.on('error', (err) => {
+                    setOnlineStatus('Erro: sala não encontrada ou indisponível');
+                    document.getElementById('online-join-confirm').style.display = 'flex';
+                });
+            } catch (e) {
+                setOnlineStatus('Falha ao conectar');
+            }
+        }
+
+        function broadcastShot(vx, vy) {
+            if (!onlineMode) return;
+            sendOnline({ type: 'shot', vx, vy });
+        }
+
+        function broadcastPlace(x, y) {
+            if (!onlineMode) return;
+            sendOnline({ type: 'place', x, y });
+        }
+
+        function broadcastSync() {
+            if (!onlineMode || !isHost) return;
+            const ballState = balls.map(b => ({
+                n: b.number, x: b.x, y: b.y, sunk: b.sunk
+            }));
+            sendOnline({
+                type: 'sync',
+                balls: ballState,
+                currentPlayer,
+                ballInHand,
+                playerGroups,
+                sunkBalls
+            });
+        }
+
+        document.getElementById('btn-online').addEventListener('click', openOnline);
+        document.getElementById('online-close').addEventListener('click', closeOnline);
+        document.getElementById('online-overlay').addEventListener('click', e => {
+            if (e.target.id === 'online-overlay') closeOnline();
+        });
+        document.getElementById('online-host-btn').addEventListener('click', hostOnline);
+        document.getElementById('online-join-btn').addEventListener('click', showJoinUI);
+        document.getElementById('online-connect-btn').addEventListener('click', joinOnline);
+        document.getElementById('online-cancel-btn').addEventListener('click', resetOnlineUI);
+        document.getElementById('online-cancel-wait-btn').addEventListener('click', () => {
+            disconnectOnline();
+            resetOnlineUI();
+        });
+        document.getElementById('online-join-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') joinOnline();
         });
 
         // ===== TORNEIO =====
@@ -2185,14 +2597,14 @@
 
         // ===== GIRE E GANHE =====
         const spinPrizes = [
-            { label: '50 🪙', coins: 50 },
-            { label: '100 🪙', coins: 100 },
-            { label: '20 🪙', coins: 20 },
             { label: '200 🪙', coins: 200 },
+            { label: '500 🪙', coins: 500 },
+            { label: '100 🪙', coins: 100 },
+            { label: '1000 🪙', coins: 1000 },
             { label: 'Tente de novo', coins: 0 },
-            { label: '75 🪙', coins: 75 },
-            { label: '30 🪙', coins: 30 },
-            { label: '150 🪙', coins: 150 }
+            { label: '300 🪙', coins: 300 },
+            { label: '150 🪙', coins: 150 },
+            { label: '750 🪙', coins: 750 }
         ];
         let isSpinning = false;
         // freeSpinAvailable já declarado no LOGIN
@@ -2544,8 +2956,13 @@
         }
 
         function updateUI() {
-            document.getElementById('name-p1').textContent = vsCPU ? playerName : playerName;
-            document.getElementById('name-p2').textContent = vsCPU ? (cpuThinking ? 'CPU…' : 'CPU') : 'Jogador 2';
+            if (onlineMode) {
+                document.getElementById('name-p1').textContent = isHost ? playerName : opponentName;
+                document.getElementById('name-p2').textContent = isHost ? opponentName : playerName;
+            } else {
+                document.getElementById('name-p1').textContent = playerName;
+                document.getElementById('name-p2').textContent = vsCPU ? (cpuThinking ? 'CPU…' : 'CPU') : 'Jogador 2';
+            }
 
             const g1 = playerGroups[1];
             const g2 = playerGroups[2];
@@ -3286,7 +3703,9 @@
                 isPlacing = false;
                 if (cueBall) {
                     cueBall.sunk = false;
-                    placeCueBall(230, H / 2);
+                    // posiciona sem broadcast (sync virá do host)
+                    cueBall.x = 230; cueBall.y = H / 2;
+                    cueBall.vx = 0; cueBall.vy = 0;
                 }
                 updateUI();
             } else if (shotSunkValid === 0) {
@@ -3297,6 +3716,10 @@
             shotSunkValid = 0;
             shotCueSunk = false;
             shotEightSunk = false;
+
+            if (onlineMode && isHost) {
+                setTimeout(() => broadcastSync(), 50);
+            }
 
             if (!gameWon && isCPUTurn()) scheduleCPUTurn();
         }
@@ -3336,6 +3759,7 @@
             cueBall.vx = 0;
             cueBall.vy = 0;
             cueBall.sunk = false;
+            if (onlineMode && isMyOnlineTurn()) broadcastPlace(cueBall.x, cueBall.y);
         }
 
         function drawBallInHandHint() {
@@ -3368,7 +3792,7 @@
             checkCollisions();
             checkPockets();
             if (isAiming) drawCueStick();
-            if (ballInHand && cueBall && !cueBall.sunk && !isCPUTurn() && !cpuThinking) drawBallInHandHint();
+            if (ballInHand && cueBall && !cueBall.sunk && !isCPUTurn() && !cpuThinking && (!onlineMode || isMyOnlineTurn())) drawBallInHandHint();
             if (shotActive && allBallsStopped() && !gameWon) endShot();
             requestAnimationFrame(gameLoop);
         }
@@ -3376,6 +3800,7 @@
         function startAim(x, y) {
             if (gameWon || !cueBall || !allBallsStopped() || cueBall.sunk || shotActive) return;
             if (cpuThinking || isCPUTurn()) return;
+            if (onlineMode && !isMyOnlineTurn()) return;
             if (ballInHand) return;
             isAiming = true;
             aimStartX = x;
@@ -3384,6 +3809,7 @@
 
         function shoot(x, y) {
             if (!isAiming || !cueBall) return;
+            if (onlineMode && !isMyOnlineTurn()) return;
             const cue = cues[selectedCue];
             const dx = cueBall.x - x;
             const dy = cueBall.y - y;
@@ -3397,6 +3823,7 @@
             shotSunkValid = 0;
             shotCueSunk = false;
             shotEightSunk = false;
+            broadcastShot(cueBall.vx, cueBall.vy);
             updateUI();
         }
 
@@ -3417,6 +3844,7 @@
                 e.preventDefault();
                 const { x, y } = pointerPos(e);
                 if (cpuThinking || isCPUTurn()) return;
+                if (onlineMode && !isMyOnlineTurn()) return;
 
                 if (ballInHand && cueBall && !cueBall.sunk && allBallsStopped()) {
                     const dist = Math.hypot(x - cueBall.x, y - cueBall.y);
