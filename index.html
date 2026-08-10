@@ -20,6 +20,127 @@
             touch-action: none;
         }
 
+        /* ===================== LOGIN ===================== */
+        #login-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(ellipse at 40% 30%, rgba(56,189,248,0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 70%, rgba(251,191,36,0.1) 0%, transparent 45%),
+                linear-gradient(180deg, #0a0e14 0%, #121820 50%, #0a0e14 100%);
+        }
+        #login-screen.hidden { display: none; }
+        .login-card {
+            background: linear-gradient(165deg, #1a2230 0%, #121820 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 22px;
+            padding: 36px 32px 28px;
+            width: 92%;
+            max-width: 380px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+            text-align: center;
+            animation: popIn 0.35s ease;
+        }
+        .login-logo {
+            font-size: 42px;
+            margin-bottom: 6px;
+        }
+        .login-title {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #4fc3f7, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+        .login-sub {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+        .login-field {
+            text-align: left;
+            margin-bottom: 14px;
+        }
+        .login-field label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .login-field input {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .login-field input:focus {
+            border-color: rgba(79,195,247,0.5);
+        }
+        .login-field input::placeholder {
+            color: #475569;
+            font-weight: 500;
+        }
+        .login-btn {
+            width: 100%;
+            margin-top: 8px;
+            padding: 14px;
+            background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.25);
+            transition: all 0.2s;
+        }
+        .login-btn:hover {
+            background: linear-gradient(180deg, #7dd3fc 0%, #0ea5e9 100%);
+            transform: translateY(-1px);
+        }
+        .login-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 rgba(0,0,0,0.25);
+        }
+        .login-error {
+            color: #f87171;
+            font-size: 12px;
+            font-weight: 600;
+            min-height: 18px;
+            margin-top: 8px;
+        }
+        .login-guest {
+            margin-top: 14px;
+            background: none;
+            border: none;
+            color: #64748b;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+        .login-guest:hover { color: #94a3b8; }
+
         /* ===================== TELA INICIAL ===================== */
         #menu-screen {
             position: fixed;
@@ -1289,6 +1410,26 @@
     </style>
 </head>
 <body>
+    <!-- ===================== LOGIN ===================== -->
+    <div id="login-screen">
+        <div class="login-card">
+            <div class="login-logo">🎱</div>
+            <div class="login-title">SINUCA 8 BOLAS</div>
+            <div class="login-sub">Entre para salvar seu progresso</div>
+            <div class="login-field">
+                <label for="login-name">Nome de jogador</label>
+                <input type="text" id="login-name" maxlength="16" placeholder="Digite seu nome" autocomplete="username">
+            </div>
+            <div class="login-field">
+                <label for="login-pass">Senha (opcional)</label>
+                <input type="password" id="login-pass" maxlength="24" placeholder="••••••" autocomplete="current-password">
+            </div>
+            <div class="login-error" id="login-error"></div>
+            <button class="login-btn" id="login-btn">Entrar</button>
+            <button class="login-guest" id="login-guest">Continuar como convidado</button>
+        </div>
+    </div>
+
     <!-- ===================== TELA INICIAL ===================== -->
     <div id="menu-screen">
         <div class="sunburst"></div>
@@ -1305,11 +1446,11 @@
 
         <div class="menu-top">
             <div class="menu-player">
-                <div class="menu-avatar">P1</div>
+                <div class="menu-avatar" id="menu-avatar">P1</div>
                 <div>
-                    <div class="menu-player-name">Jogador</div>
+                    <div class="menu-player-name" id="menu-player-name">Jogador</div>
                 </div>
-                <div class="menu-level">1</div>
+                <div class="menu-level" id="menu-level">1</div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
                 <button id="daily-reward-btn" class="daily-btn" title="Bônus diário de 100 moedas">
@@ -1489,6 +1630,149 @@
     </div>
 
     <script>
+        // ===== LOGIN + PERFIL (moedas, tacos, extras) =====
+        let playerName = 'Jogador';
+        let playerCoins = 550;
+        let ownedCues = [0];
+        let ownedExtras = {};
+        let selectedCue = 0;
+        let freeSpinAvailable = true;
+
+        function profileKey(name) {
+            return 'sinuca_profile_' + (name || 'guest').toLowerCase().trim();
+        }
+
+        function defaultProfile() {
+            return {
+                coins: 550,
+                ownedCues: [0],
+                ownedExtras: {},
+                selectedCue: 0,
+                dailyTs: 0,
+                freeSpin: true
+            };
+        }
+
+        function loadProfile(name) {
+            const def = defaultProfile();
+            try {
+                const raw = localStorage.getItem(profileKey(name));
+                if (!raw) return def;
+                const data = JSON.parse(raw);
+                return {
+                    coins: Math.max(0, parseInt(data.coins, 10) || def.coins),
+                    ownedCues: Array.isArray(data.ownedCues) && data.ownedCues.length
+                        ? data.ownedCues.map(Number).filter(n => n >= 0 && n <= 5)
+                        : [0],
+                    ownedExtras: (data.ownedExtras && typeof data.ownedExtras === 'object') ? data.ownedExtras : {},
+                    selectedCue: (typeof data.selectedCue === 'number' && data.ownedCues && data.ownedCues.includes(data.selectedCue))
+                        ? data.selectedCue : 0,
+                    dailyTs: parseInt(data.dailyTs, 10) || 0,
+                    freeSpin: data.freeSpin !== false
+                };
+            } catch (e) {
+                return def;
+            }
+        }
+
+        function saveProfile() {
+            try {
+                const data = {
+                    coins: playerCoins,
+                    ownedCues: ownedCues,
+                    ownedExtras: ownedExtras,
+                    selectedCue: selectedCue,
+                    dailyTs: getLastClaimTime(),
+                    freeSpin: freeSpinAvailable
+                };
+                localStorage.setItem(profileKey(playerName), JSON.stringify(data));
+                localStorage.setItem('sinuca_player', playerName);
+            } catch (e) {}
+        }
+
+        function applyProfile(data) {
+            playerCoins = data.coins;
+            ownedCues = data.ownedCues.includes(0) ? data.ownedCues : [0, ...data.ownedCues];
+            ownedExtras = data.ownedExtras || {};
+            selectedCue = ownedCues.includes(data.selectedCue) ? data.selectedCue : 0;
+            freeSpinAvailable = data.freeSpin !== false;
+            try {
+                if (data.dailyTs) localStorage.setItem('sinuca_daily_ts', String(data.dailyTs));
+            } catch (e) {}
+            if (typeof updateCoinDisplays === 'function') updateCoinDisplays();
+            if (typeof updateDailyButton === 'function') updateDailyButton();
+            if (typeof buildCueRack === 'function') buildCueRack();
+            if (typeof renderShop === 'function') renderShop();
+            if (typeof updateSpinUI === 'function') updateSpinUI();
+        }
+
+        function applyPlayerName() {
+            const menuName = document.getElementById('menu-player-name');
+            if (menuName) menuName.textContent = playerName;
+            const avatar = document.getElementById('menu-avatar');
+            if (avatar) {
+                const initials = playerName.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                avatar.textContent = initials || 'P1';
+            }
+        }
+
+        function finishLogin(name) {
+            playerName = (name || 'Jogador').trim().slice(0, 16) || 'Jogador';
+            const profile = loadProfile(playerName);
+            applyProfile(profile);
+            applyPlayerName();
+            saveProfile();
+            document.getElementById('login-screen').classList.add('hidden');
+            if (typeof showToast === 'function') {
+                showToast('Olá, ' + playerName + '! 🎱');
+            }
+        }
+
+        function doLogin() {
+            const nameInput = document.getElementById('login-name');
+            const passInput = document.getElementById('login-pass');
+            const err = document.getElementById('login-error');
+            const name = (nameInput.value || '').trim();
+            const pass = (passInput.value || '').trim();
+
+            if (!name || name.length < 2) {
+                err.textContent = 'Digite um nome com pelo menos 2 letras.';
+                nameInput.focus();
+                return;
+            }
+
+            if (pass) {
+                try {
+                    const key = 'sinuca_pass_' + name.toLowerCase();
+                    const existing = localStorage.getItem(key);
+                    if (existing && existing !== pass) {
+                        err.textContent = 'Senha incorreta para este nome.';
+                        return;
+                    }
+                    if (!existing) localStorage.setItem(key, pass);
+                } catch (e) {}
+            }
+
+            err.textContent = '';
+            finishLogin(name);
+        }
+
+        document.getElementById('login-btn').addEventListener('click', doLogin);
+        document.getElementById('login-guest').addEventListener('click', () => finishLogin('Convidado'));
+        document.getElementById('login-name').addEventListener('keydown', e => {
+            if (e.key === 'Enter') doLogin();
+        });
+        document.getElementById('login-pass').addEventListener('keydown', e => {
+            if (e.key === 'Enter') doLogin();
+        });
+
+        try {
+            const saved = localStorage.getItem('sinuca_player');
+            if (saved && saved !== 'Convidado' && saved !== 'Jogador') {
+                document.getElementById('login-name').value = saved;
+            }
+        } catch (e) {}
+
         // ===== MENU =====
         const menuScreen = document.getElementById('menu-screen');
         const gameContainer = document.getElementById('game-container');
@@ -1496,7 +1780,6 @@
         document.getElementById('btn-play').addEventListener('click', () => {
             menuScreen.classList.add('hidden');
             gameContainer.classList.add('visible');
-            // reinicia o jogo ao entrar
             if (typeof createBalls === 'function') createBalls();
         });
 
@@ -1650,14 +1933,10 @@
         document.getElementById('tour-start-btn').addEventListener('click', startOrContinueTournament);
 
         // ===== LOJA / MOEDAS =====
-        let playerCoins = 550;
-        try {
-            const saved = localStorage.getItem('sinuca_coins');
-            if (saved !== null) playerCoins = Math.max(0, parseInt(saved, 10) || 550);
-        } catch (e) {}
+        // playerCoins, ownedCues, ownedExtras, selectedCue já declarados no LOGIN
 
         function saveCoins() {
-            try { localStorage.setItem('sinuca_coins', String(playerCoins)); } catch (e) {}
+            saveProfile();
         }
 
         const DAILY_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutos
@@ -1722,7 +2001,6 @@
             updateDailyButton();
         }, 0);
         updateDailyButton();
-        let ownedCues = [0]; // índices dos tacos possuídos (Clássico vem grátis)
         let currentShopTab = 'cues';
 
         const shopItems = {
@@ -1746,9 +2024,6 @@
                 { id: 'pack3', name: 'Pacote Grande', desc: '+1000 moedas', price: 0, coins: 1000, real: false }
             ]
         };
-
-        // itens extras comprados
-        let ownedExtras = {};
 
         function updateCoinDisplays() {
             document.getElementById('coin-count').textContent = playerCoins;
@@ -1832,6 +2107,7 @@
                 const cueIdx = parseInt(btn.dataset.cue);
                 if (ownedCues.includes(cueIdx)) {
                     selectedCue = cueIdx;
+                    saveProfile();
                     buildCueRack();
                     renderShop();
                     showToast(`Taco equipado!`);
@@ -1919,7 +2195,7 @@
             { label: '150 🪙', coins: 150 }
         ];
         let isSpinning = false;
-        let freeSpinAvailable = true;
+        // freeSpinAvailable já declarado no LOGIN
         let currentRotation = 0;
 
         function buildWheelLabels() {
@@ -1986,6 +2262,7 @@
             } else {
                 freeSpinAvailable = false;
             }
+            saveProfile();
 
             isSpinning = true;
             updateSpinUI();
@@ -2067,7 +2344,7 @@
             { name: 'Roxo',     shaft: '#9333ea', butt: '#581c87', grip: '#1e1b4b', rings: ['#d8b4fe', '#6b21a8'], tip: '#f3e8ff', power: 1.03 },
             { name: 'Dourado',  shaft: '#ca8a04', butt: '#713f12', grip: '#1c1917', rings: ['#fde047', '#a16207', '#fef08a'], tip: '#fefce8', power: 1.12 }
         ];
-        let selectedCue = 0;
+        // selectedCue já declarado no LOGIN
 
         function buildCueRack() {
             const rack = document.getElementById('cue-rack');
@@ -2267,7 +2544,7 @@
         }
 
         function updateUI() {
-            document.getElementById('name-p1').textContent = vsCPU ? 'Você' : 'Jogador 1';
+            document.getElementById('name-p1').textContent = vsCPU ? playerName : playerName;
             document.getElementById('name-p2').textContent = vsCPU ? (cpuThinking ? 'CPU…' : 'CPU') : 'Jogador 2';
 
             const g1 = playerGroups[1];
@@ -2925,7 +3202,7 @@
             gameWon = true;
             const isLoss = hasGroupBallsLeft; // quem encaçapou a 8 perdeu se ainda tinha bolas do grupo
             const color = currentPlayer === 1 ? '#4fc3f7' : '#ffb74d';
-            let name = vsCPU ? (currentPlayer === 1 ? 'VOCÊ' : 'CPU') : `JOGADOR ${currentPlayer}`;
+            let name = vsCPU ? (currentPlayer === 1 ? playerName.toUpperCase() : 'CPU') : (currentPlayer === 1 ? playerName.toUpperCase() : 'JOGADOR 2');
 
             // vitória do jogador humano (P1)
             const humanWon = (currentPlayer === 1 && !isLoss) || (currentPlayer === 2 && isLoss);
@@ -2975,10 +3252,10 @@
                     : 'Jogar de novo';
 
             winMessage.innerHTML = (vsCPU ? humanLost : isLoss)
-                ? `<div class="win-title">❌ ${vsCPU && humanLost ? 'VOCÊ' : name}</div>
+                ? `<div class="win-title">❌ ${vsCPU && humanLost ? playerName.toUpperCase() : name}</div>
                    <div class="win-sub">${subMsg}</div>
                    <button class="play-again-btn" id="play-again-btn">${againLabel}</button>`
-                : `<div class="win-title">🎉 ${vsCPU && humanWon ? 'VOCÊ' : name}</div>
+                : `<div class="win-title">🎉 ${vsCPU && humanWon ? playerName.toUpperCase() : name}</div>
                    <div class="win-sub">${subMsg}</div>
                    <button class="play-again-btn" id="play-again-btn">${againLabel}</button>`;
             winMessage.style.display = 'block';
