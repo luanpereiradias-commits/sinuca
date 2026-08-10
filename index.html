@@ -166,6 +166,35 @@
         }
         .menu-coins span { color: #fff; margin-left: 4px; }
 
+        .daily-btn {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding: 6px 12px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(34,197,94,0.35);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            letter-spacing: 0.3px;
+        }
+        .daily-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 14px rgba(34,197,94,0.5);
+        }
+        .daily-btn:disabled, .daily-btn.claimed {
+            background: rgba(100,116,139,0.5);
+            box-shadow: none;
+            cursor: default;
+            transform: none;
+            opacity: 0.7;
+        }
+
         /* logo central */
         .logo-wrap {
             position: relative;
@@ -288,6 +317,609 @@
         }
         .btn-shop:hover {
             background: linear-gradient(180deg, #5cc8fa 0%, #0ea5e9 100%);
+        }
+
+        /* ===================== LOJA ===================== */
+        #shop-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.82);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 250;
+            backdrop-filter: blur(6px);
+        }
+        #shop-overlay.show { display: flex; }
+        #shop-modal {
+            background: linear-gradient(165deg, #1a2230 0%, #0f1620 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            width: 92%;
+            max-width: 520px;
+            max-height: 88vh;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.65);
+            animation: popIn 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .shop-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: linear-gradient(180deg, #243044 0%, #1a2230 100%);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .shop-header h3 {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #38bdf8, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .shop-coins {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(251,191,36,0.35);
+            border-radius: 20px;
+            padding: 5px 12px;
+            color: #fbbf24;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .shop-close {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #94a3b8;
+            width: 34px; height: 34px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .shop-close:hover { background: rgba(239,68,68,0.2); color: #f87171; }
+
+        .shop-tabs {
+            display: flex;
+            gap: 6px;
+            padding: 12px 16px 0;
+        }
+        .shop-tab {
+            flex: 1;
+            padding: 9px 8px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+            letter-spacing: 0.4px;
+        }
+        .shop-tab.active {
+            background: rgba(56,189,248,0.15);
+            border-color: rgba(56,189,248,0.4);
+            color: #38bdf8;
+        }
+
+        .shop-body {
+            padding: 14px 16px 18px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .shop-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .shop-item {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 14px 12px 12px;
+            text-align: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .shop-item:hover {
+            background: rgba(255,255,255,0.07);
+            border-color: rgba(255,255,255,0.14);
+        }
+        .shop-item.owned {
+            border-color: rgba(34,197,94,0.35);
+            background: rgba(34,197,94,0.08);
+        }
+        .shop-item.equipped {
+            border-color: rgba(56,189,248,0.5);
+            box-shadow: 0 0 16px rgba(56,189,248,0.2);
+        }
+        .shop-item-preview {
+            height: 48px;
+            margin: 0 auto 10px;
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .shop-item-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 3px;
+        }
+        .shop-item-desc {
+            font-size: 10px;
+            color: #64748b;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        .shop-item-price {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(251,191,36,0.12);
+            border: 1px solid rgba(251,191,36,0.3);
+            color: #fbbf24;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .shop-item-price:hover {
+            background: rgba(251,191,36,0.22);
+            transform: scale(1.04);
+        }
+        .shop-item-price.owned-btn {
+            background: rgba(34,197,94,0.15);
+            border-color: rgba(34,197,94,0.35);
+            color: #4ade80;
+            cursor: default;
+        }
+        .shop-item-price.equip-btn {
+            background: rgba(56,189,248,0.15);
+            border-color: rgba(56,189,248,0.4);
+            color: #38bdf8;
+            cursor: pointer;
+        }
+        .shop-item-price.equipped-btn {
+            background: rgba(56,189,248,0.25);
+            border-color: rgba(56,189,248,0.55);
+            color: #7dd3fc;
+            cursor: default;
+        }
+        .shop-badge {
+            position: absolute;
+            top: 8px; right: 8px;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 6px;
+            letter-spacing: 0.3px;
+        }
+        .shop-badge.new { background: #ef4444; color: #fff; }
+        .shop-badge.owned { background: #22c55e; color: #fff; }
+
+        .shop-toast {
+            position: fixed;
+            bottom: 30px; left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid rgba(56,189,248,0.4);
+            color: #e2e8f0;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 300;
+            opacity: 0;
+            transition: all 0.3s;
+            pointer-events: none;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        }
+        .shop-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ===================== GIRE E GANHE ===================== */
+        #spin-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 260;
+            backdrop-filter: blur(6px);
+        }
+        #spin-overlay.show { display: flex; }
+        #spin-modal {
+            background: linear-gradient(165deg, #1a1525 0%, #0f0c18 100%);
+            border: 1px solid rgba(255,180,50,0.25);
+            border-radius: 22px;
+            width: 92%;
+            max-width: 400px;
+            padding: 22px 20px 20px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 40px rgba(255,140,0,0.15);
+            animation: popIn 0.3s ease;
+            text-align: center;
+            position: relative;
+        }
+        .spin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .spin-header h3 {
+            font-size: 18px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fbbf24, #f97316);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
+        }
+        .spin-coins {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(251,191,36,0.35);
+            border-radius: 16px;
+            padding: 4px 10px;
+            color: #fbbf24;
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .spin-close {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #94a3b8;
+            width: 32px; height: 32px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .spin-close:hover { background: rgba(239,68,68,0.2); color: #f87171; }
+
+        .spin-wheel-wrap {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 12px auto 16px;
+        }
+        .spin-pointer {
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            width: 0; height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 22px solid #fbbf24;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+        #spin-wheel {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            border: 6px solid #fbbf24;
+            box-shadow:
+                0 0 0 4px #1a1525,
+                0 0 30px rgba(251,191,36,0.35),
+                inset 0 0 20px rgba(0,0,0,0.4);
+            transition: transform 4s cubic-bezier(0.15, 0.7, 0.15, 1);
+            position: relative;
+            overflow: hidden;
+            background: conic-gradient(
+                #ef4444 0deg 45deg,
+                #f59e0b 45deg 90deg,
+                #22c55e 90deg 135deg,
+                #3b82f6 135deg 180deg,
+                #a855f7 180deg 225deg,
+                #ec4899 225deg 270deg,
+                #14b8a6 270deg 315deg,
+                #64748b 315deg 360deg
+            );
+        }
+        .wheel-labels {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+        }
+        .wheel-label {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 50%;
+            transform-origin: 0 0;
+            font-size: 11px;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+            text-align: center;
+            padding-left: 28px;
+            pointer-events: none;
+        }
+        .wheel-center {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border: 3px solid #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+            z-index: 4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .spin-result {
+            min-height: 28px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #fbbf24;
+            margin-bottom: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .spin-result.show { opacity: 1; }
+
+        .spin-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .spin-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.4px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+        }
+        .spin-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+        .spin-btn-primary {
+            background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1a0a00;
+        }
+        .spin-btn-primary:hover { background: linear-gradient(180deg, #fcd34d 0%, #fbbf24 100%); }
+        .spin-btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+        .spin-btn-secondary {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #cbd5e1;
+            box-shadow: none;
+        }
+        .spin-btn-secondary:hover { background: rgba(255,255,255,0.14); }
+        .spin-hint {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        /* ===================== TORNEIOS ===================== */
+        #tournament-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 260;
+            backdrop-filter: blur(6px);
+        }
+        #tournament-overlay.show { display: flex; }
+        #tournament-modal {
+            background: linear-gradient(165deg, #14201a 0%, #0c1410 100%);
+            border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 22px;
+            width: 92%;
+            max-width: 420px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 22px 20px 20px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 40px rgba(34,197,94,0.12);
+            animation: popIn 0.3s ease;
+        }
+        .tour-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .tour-header h3 {
+            font-size: 18px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4ade80, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
+        }
+        .tour-close {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #94a3b8;
+            width: 32px; height: 32px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .tour-close:hover { background: rgba(239,68,68,0.2); color: #f87171; }
+
+        .tour-info {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 12px;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+        .tour-info strong { color: #e2e8f0; }
+
+        .tour-rounds {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .tour-round {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 12px 14px;
+            transition: all 0.2s;
+        }
+        .tour-round.current {
+            border-color: rgba(74,222,128,0.45);
+            background: rgba(74,222,128,0.1);
+            box-shadow: 0 0 16px rgba(74,222,128,0.15);
+        }
+        .tour-round.won {
+            border-color: rgba(74,222,128,0.3);
+            opacity: 0.85;
+        }
+        .tour-round.lost {
+            border-color: rgba(239,68,68,0.3);
+            opacity: 0.6;
+        }
+        .tour-round.locked {
+            opacity: 0.4;
+        }
+        .round-num {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 14px;
+            color: #e2e8f0;
+            flex-shrink: 0;
+        }
+        .tour-round.current .round-num {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #0a0a0a;
+        }
+        .tour-round.won .round-num {
+            background: rgba(74,222,128,0.25);
+            color: #4ade80;
+        }
+        .round-info { flex: 1; text-align: left; }
+        .round-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 2px;
+        }
+        .round-reward {
+            font-size: 11px;
+            color: #fbbf24;
+            font-weight: 600;
+        }
+        .round-status {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+        }
+        .tour-round.won .round-status { color: #4ade80; }
+        .tour-round.lost .round-status { color: #f87171; }
+        .tour-round.current .round-status { color: #4ade80; }
+
+        .tour-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .tour-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.4px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+        }
+        .tour-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+        .tour-btn-primary {
+            background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
+            color: #0a0a0a;
+        }
+        .tour-btn-primary:hover { background: linear-gradient(180deg, #6ee7a0 0%, #4ade80 100%); }
+        .tour-btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .tour-btn-secondary {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #cbd5e1;
+            box-shadow: none;
+        }
+        .tour-entry {
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+        .tour-entry strong { color: #fbbf24; }
+        .tour-progress {
+            text-align: center;
+            font-size: 13px;
+            color: #e2e8f0;
+            font-weight: 600;
+            margin-bottom: 10px;
         }
 
         /* side icons */
@@ -679,14 +1311,19 @@
                 </div>
                 <div class="menu-level">1</div>
             </div>
-            <div class="menu-coins">
-                🪙 <span id="coin-count">550</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button id="daily-reward-btn" class="daily-btn" title="Bônus diário de 100 moedas">
+                    🎁 <span id="daily-btn-text">+100</span>
+                </button>
+                <div class="menu-coins">
+                    🪙 <span id="coin-count">550</span>
+                </div>
             </div>
         </div>
 
         <div class="menu-side">
             <div>
-                <div class="side-btn" title="Gire e Ganhe">🎡</div>
+                <div class="side-btn" id="btn-spin" title="Gire e Ganhe">🎡</div>
                 <div class="side-label">Gire e Ganhe</div>
             </div>
             <div>
@@ -786,6 +1423,71 @@
         </div>
     </div>
 
+    <!-- LOJA -->
+    <div id="shop-overlay">
+        <div id="shop-modal">
+            <div class="shop-header">
+                <h3>🎱 Loja da Sinuca</h3>
+                <div class="shop-coins">🪙 <span id="shop-coin-count">550</span></div>
+                <button class="shop-close" id="shop-close">✕</button>
+            </div>
+            <div class="shop-tabs">
+                <button class="shop-tab active" data-tab="cues">Tacos</button>
+                <button class="shop-tab" data-tab="extras">Extras</button>
+                <button class="shop-tab" data-tab="coins">Moedas</button>
+            </div>
+            <div class="shop-body">
+                <div class="shop-grid" id="shop-grid"></div>
+            </div>
+        </div>
+    </div>
+    <div class="shop-toast" id="shop-toast"></div>
+
+    <!-- GIRE E GANHE -->
+    <div id="spin-overlay">
+        <div id="spin-modal">
+            <div class="spin-header">
+                <h3>🎡 Gire e Ganhe</h3>
+                <div class="spin-coins">🪙 <span id="spin-coin-count">550</span></div>
+                <button class="spin-close" id="spin-close">✕</button>
+            </div>
+            <div class="spin-wheel-wrap">
+                <div class="spin-pointer"></div>
+                <div id="spin-wheel">
+                    <div class="wheel-labels" id="wheel-labels"></div>
+                    <div class="wheel-center">🎱</div>
+                </div>
+            </div>
+            <div class="spin-result" id="spin-result"></div>
+            <div class="spin-actions">
+                <button class="spin-btn spin-btn-primary" id="spin-btn">Girar grátis!</button>
+                <button class="spin-btn spin-btn-secondary" id="spin-close-btn">Fechar</button>
+            </div>
+            <div class="spin-hint" id="spin-hint">1ª roleta do dia é grátis · Depois: 100 🪙</div>
+        </div>
+    </div>
+
+    <!-- TORNEIOS -->
+    <div id="tournament-overlay">
+        <div id="tournament-modal">
+            <div class="tour-header">
+                <h3>🏆 Torneio da Sinuca</h3>
+                <button class="tour-close" id="tour-close">✕</button>
+            </div>
+            <div class="tour-info">
+                Derrote <strong>3 oponentes</strong> em sequência no modo vs CPU.<br>
+                Taxa de entrada: <strong>80 🪙</strong> · Prêmio total: até <strong>500 🪙</strong>
+            </div>
+            <div class="tour-progress" id="tour-progress">Pronto para começar</div>
+            <div class="tour-rounds" id="tour-rounds"></div>
+            <div class="tour-entry" id="tour-entry"></div>
+            <div class="tour-actions">
+                <button class="tour-btn tour-btn-primary" id="tour-start-btn">Entrar no Torneio — 80 🪙</button>
+                <button class="tour-btn tour-btn-secondary" id="tour-close-btn">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ===== MENU =====
         const menuScreen = document.getElementById('menu-screen');
@@ -803,13 +1505,536 @@
             menuScreen.classList.remove('hidden');
         });
 
-        // botões decorativos do menu
-        document.getElementById('btn-tournaments').addEventListener('click', () => {
-            alert('Torneios em breve! 🏆');
+        // ===== TORNEIO =====
+        const tournamentRounds = [
+            { name: 'Oitavas — Iniciante', opponent: 'Carlos', reward: 60, difficulty: 0.7 },
+            { name: 'Semifinal — Intermediário', opponent: 'Ana', reward: 120, difficulty: 0.85 },
+            { name: 'Final — Campeão', opponent: 'Roberto', reward: 320, difficulty: 1.0 }
+        ];
+        let tournamentActive = false;
+        let tournamentRound = 0; // 0,1,2
+        let tournamentResults = []; // 'won' | 'lost' | null
+
+        function renderTournament() {
+            const container = document.getElementById('tour-rounds');
+            container.innerHTML = '';
+            tournamentRounds.forEach((r, i) => {
+                const status = tournamentResults[i] || null;
+                let cls = 'tour-round';
+                let statusText = 'Bloqueado';
+                if (tournamentActive && i === tournamentRound && !status) {
+                    cls += ' current';
+                    statusText = '▶ Próxima partida';
+                } else if (status === 'won') {
+                    cls += ' won';
+                    statusText = '✓ Vitória';
+                } else if (status === 'lost') {
+                    cls += ' lost';
+                    statusText = '✗ Derrota';
+                } else if (!tournamentActive && i === 0) {
+                    statusText = 'Aguardando';
+                } else if (i > 0 && tournamentResults[i - 1] !== 'won') {
+                    cls += ' locked';
+                }
+
+                container.innerHTML += `
+                    <div class="${cls}">
+                        <div class="round-num">${i + 1}</div>
+                        <div class="round-info">
+                            <div class="round-title">${r.name}</div>
+                            <div class="round-reward">vs ${r.opponent} · +${r.reward} 🪙</div>
+                        </div>
+                        <div class="round-status">${statusText}</div>
+                    </div>
+                `;
+            });
+
+            const progress = document.getElementById('tour-progress');
+            const entry = document.getElementById('tour-entry');
+            const btn = document.getElementById('tour-start-btn');
+
+            if (!tournamentActive) {
+                progress.textContent = 'Pronto para começar';
+                entry.innerHTML = `Taxa de entrada: <strong>80 🪙</strong> · Você tem <strong>${playerCoins} 🪙</strong>`;
+                btn.textContent = 'Entrar no Torneio — 80 🪙';
+                btn.disabled = playerCoins < 80;
+                btn.style.display = '';
+            } else if (tournamentResults[tournamentRound] === 'lost' || (tournamentRound >= 3)) {
+                const wins = tournamentResults.filter(x => x === 'won').length;
+                if (wins === 3) {
+                    progress.textContent = '🏆 Você é o campeão do torneio!';
+                } else {
+                    progress.textContent = `Torneio encerrado — ${wins}/3 vitórias`;
+                }
+                entry.innerHTML = '';
+                btn.textContent = 'Novo Torneio — 80 🪙';
+                btn.disabled = playerCoins < 80;
+            } else {
+                const r = tournamentRounds[tournamentRound];
+                progress.textContent = `Rodada ${tournamentRound + 1}/3 — vs ${r.opponent}`;
+                entry.innerHTML = `Prêmio desta partida: <strong>+${r.reward} 🪙</strong>`;
+                btn.textContent = `Jogar vs ${r.opponent}`;
+                btn.disabled = false;
+            }
+        }
+
+        function openTournament() {
+            renderTournament();
+            document.getElementById('tournament-overlay').classList.add('show');
+        }
+
+        function closeTournament() {
+            document.getElementById('tournament-overlay').classList.remove('show');
+        }
+
+        function startOrContinueTournament() {
+            if (!tournamentActive || tournamentResults[tournamentRound] === 'lost' || tournamentRound >= 3) {
+                // novo torneio
+                if (playerCoins < 80) {
+                    showToast('Moedas insuficientes! Precisa de 80 🪙');
+                    return;
+                }
+                playerCoins -= 80;
+                updateCoinDisplays();
+                tournamentActive = true;
+                tournamentRound = 0;
+                tournamentResults = [];
+                showToast('Torneio iniciado! -80 🪙');
+            }
+
+            // entra no jogo vs CPU
+            closeTournament();
+            vsCPU = true;
+            const modeBtn = document.getElementById('mode-btn');
+            if (modeBtn) {
+                modeBtn.textContent = 'vs CPU';
+                modeBtn.classList.add('active');
+            }
+            menuScreen.classList.add('hidden');
+            gameContainer.classList.add('visible');
+            createBalls();
+            showToast(`Rodada ${tournamentRound + 1}: vs ${tournamentRounds[tournamentRound].opponent}`);
+        }
+
+        function onTournamentMatchEnd(playerWon) {
+            if (!tournamentActive) return;
+
+            if (playerWon) {
+                tournamentResults[tournamentRound] = 'won';
+                const reward = tournamentRounds[tournamentRound].reward;
+                playerCoins += reward;
+                updateCoinDisplays();
+                showToast(`Vitória! +${reward} 🪙`);
+
+                if (tournamentRound >= 2) {
+                    // campeão
+                    tournamentRound = 3;
+                    showToast('🏆 Campeão do Torneio! +bônus');
+                    playerCoins += 50;
+                    updateCoinDisplays();
+                } else {
+                    tournamentRound++;
+                }
+            } else {
+                tournamentResults[tournamentRound] = 'lost';
+                showToast('Eliminado do torneio...');
+            }
+        }
+
+        document.getElementById('btn-tournaments').addEventListener('click', openTournament);
+        document.getElementById('tour-close').addEventListener('click', closeTournament);
+        document.getElementById('tour-close-btn').addEventListener('click', closeTournament);
+        document.getElementById('tournament-overlay').addEventListener('click', e => {
+            if (e.target.id === 'tournament-overlay') closeTournament();
         });
-        document.getElementById('btn-shop').addEventListener('click', () => {
-            alert('Loja da Sinuca em breve! 🎱');
+        document.getElementById('tour-start-btn').addEventListener('click', startOrContinueTournament);
+
+        // ===== LOJA / MOEDAS =====
+        let playerCoins = 550;
+        try {
+            const saved = localStorage.getItem('sinuca_coins');
+            if (saved !== null) playerCoins = Math.max(0, parseInt(saved, 10) || 550);
+        } catch (e) {}
+
+        function saveCoins() {
+            try { localStorage.setItem('sinuca_coins', String(playerCoins)); } catch (e) {}
+        }
+
+        const DAILY_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutos
+
+        function getLastClaimTime() {
+            try {
+                const t = parseInt(localStorage.getItem('sinuca_daily_ts') || '0', 10);
+                return isNaN(t) ? 0 : t;
+            } catch (e) { return 0; }
+        }
+
+        function canClaimDaily() {
+            return Date.now() - getLastClaimTime() >= DAILY_COOLDOWN_MS;
+        }
+
+        function getDailyRemainingMs() {
+            return Math.max(0, DAILY_COOLDOWN_MS - (Date.now() - getLastClaimTime()));
+        }
+
+        function formatRemaining(ms) {
+            const totalSec = Math.ceil(ms / 1000);
+            const m = Math.floor(totalSec / 60);
+            const s = totalSec % 60;
+            return m + ':' + String(s).padStart(2, '0');
+        }
+
+        function updateDailyButton() {
+            const btn = document.getElementById('daily-reward-btn');
+            const txt = document.getElementById('daily-btn-text');
+            if (!btn) return;
+            if (canClaimDaily()) {
+                btn.disabled = false;
+                btn.classList.remove('claimed');
+                if (txt) txt.textContent = '+100';
+                btn.title = 'Bônus de 100 moedas (a cada 30 min)';
+            } else {
+                btn.disabled = true;
+                btn.classList.add('claimed');
+                const left = formatRemaining(getDailyRemainingMs());
+                if (txt) txt.textContent = left;
+                btn.title = 'Aguarde ' + left + ' para resgatar de novo';
+            }
+        }
+
+        function claimDailyReward() {
+            if (!canClaimDaily()) {
+                showToast('Aguarde ' + formatRemaining(getDailyRemainingMs()) + ' para resgatar de novo');
+                return;
+            }
+            playerCoins += 100;
+            try { localStorage.setItem('sinuca_daily_ts', String(Date.now())); } catch (e) {}
+            saveCoins();
+            updateCoinDisplays();
+            updateDailyButton();
+            showToast('🎁 +100 moedas!');
+        }
+
+        document.getElementById('daily-reward-btn').addEventListener('click', claimDailyReward);
+        setInterval(updateDailyButton, 1000);
+        setTimeout(() => {
+            if (typeof updateCoinDisplays === 'function') updateCoinDisplays();
+            updateDailyButton();
+        }, 0);
+        updateDailyButton();
+        let ownedCues = [0]; // índices dos tacos possuídos (Clássico vem grátis)
+        let currentShopTab = 'cues';
+
+        const shopItems = {
+            cues: [
+                { id: 0, name: 'Clássico', desc: 'Taco padrão', price: 0, cueIndex: 0, free: true },
+                { id: 1, name: 'Azul', desc: 'Potência +5%', price: 120, cueIndex: 1 },
+                { id: 2, name: 'Vermelho', desc: 'Potência +8%', price: 180, cueIndex: 2 },
+                { id: 3, name: 'Verde', desc: 'Controle +3%', price: 100, cueIndex: 3 },
+                { id: 4, name: 'Roxo', desc: 'Potência +3%', price: 150, cueIndex: 4 },
+                { id: 5, name: 'Dourado', desc: 'Potência +12%', price: 350, cueIndex: 5, badge: 'new' }
+            ],
+            extras: [
+                { id: 'hint', name: 'Dica de Mira', desc: 'Linha de mira mais longa por 3 partidas', price: 80, type: 'consumable' },
+                { id: 'rerack', name: 'Re-rack', desc: 'Reposiciona as bolas uma vez', price: 50, type: 'consumable' },
+                { id: 'lucky', name: 'Bola da Sorte', desc: 'Chance de ponto extra ao encaçapar', price: 200, type: 'boost' },
+                { id: 'table', name: 'Feltro Azul', desc: 'Muda a cor da mesa (cosmético)', price: 250, type: 'cosmetic' }
+            ],
+            coins: [
+                { id: 'pack1', name: 'Pacote Pequeno', desc: '+150 moedas', price: 0, coins: 150, real: false },
+                { id: 'pack2', name: 'Pacote Médio', desc: '+400 moedas', price: 0, coins: 400, real: false },
+                { id: 'pack3', name: 'Pacote Grande', desc: '+1000 moedas', price: 0, coins: 1000, real: false }
+            ]
+        };
+
+        // itens extras comprados
+        let ownedExtras = {};
+
+        function updateCoinDisplays() {
+            document.getElementById('coin-count').textContent = playerCoins;
+            const shopEl = document.getElementById('shop-coin-count');
+            if (shopEl) shopEl.textContent = playerCoins;
+            const spinEl = document.getElementById('spin-coin-count');
+            if (spinEl) spinEl.textContent = playerCoins;
+            if (typeof saveCoins === 'function') saveCoins();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('shop-toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2200);
+        }
+
+        function renderShop() {
+            const grid = document.getElementById('shop-grid');
+            grid.innerHTML = '';
+            const items = shopItems[currentShopTab] || [];
+
+            items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'shop-item';
+
+                if (currentShopTab === 'cues') {
+                    const owned = ownedCues.includes(item.cueIndex);
+                    const equipped = selectedCue === item.cueIndex;
+                    if (owned) el.classList.add('owned');
+                    if (equipped) el.classList.add('equipped');
+
+                    const cue = cues[item.cueIndex];
+                    el.innerHTML = `
+                        ${item.badge ? `<span class="shop-badge new">NOVO</span>` : (owned ? `<span class="shop-badge owned">✓</span>` : '')}
+                        <div class="shop-item-preview" style="background:linear-gradient(90deg, ${cue.butt} 0%, ${cue.shaft} 40%, ${cue.shaft} 100%); border-radius:6px; height:18px; width:80%; margin:14px auto 12px; position:relative;">
+                            <div style="position:absolute;right:2px;top:2px;width:8px;height:14px;background:${cue.tip};border-radius:2px;"></div>
+                        </div>
+                        <div class="shop-item-name">${item.name}</div>
+                        <div class="shop-item-desc">${item.desc}</div>
+                        <button class="shop-item-price ${equipped ? 'equipped-btn' : owned ? 'equip-btn' : ''}" data-action="${equipped ? 'equipped' : owned ? 'equip' : 'buy'}" data-id="${item.id}" data-cue="${item.cueIndex}" data-price="${item.price}">
+                            ${equipped ? '✓ Equipado' : owned ? 'Equipar' : (item.free ? 'Grátis' : `🪙 ${item.price}`)}
+                        </button>
+                    `;
+                } else if (currentShopTab === 'extras') {
+                    const owned = !!ownedExtras[item.id];
+                    if (owned) el.classList.add('owned');
+                    el.innerHTML = `
+                        ${owned ? `<span class="shop-badge owned">✓</span>` : ''}
+                        <div class="shop-item-preview" style="font-size:28px;">${item.id === 'hint' ? '🎯' : item.id === 'rerack' ? '🔄' : item.id === 'lucky' ? '🍀' : '🟦'}</div>
+                        <div class="shop-item-name">${item.name}</div>
+                        <div class="shop-item-desc">${item.desc}</div>
+                        <button class="shop-item-price ${owned ? 'owned-btn' : ''}" data-action="${owned ? 'owned' : 'buy-extra'}" data-id="${item.id}" data-price="${item.price}">
+                            ${owned ? '✓ Possui' : `🪙 ${item.price}`}
+                        </button>
+                    `;
+                } else {
+                    el.innerHTML = `
+                        <div class="shop-item-preview" style="font-size:28px;">🪙</div>
+                        <div class="shop-item-name">${item.name}</div>
+                        <div class="shop-item-desc">${item.desc}</div>
+                        <button class="shop-item-price" data-action="add-coins" data-coins="${item.coins}">
+                            Pegar
+                        </button>
+                    `;
+                }
+                grid.appendChild(el);
+            });
+
+            // bind buttons
+            grid.querySelectorAll('.shop-item-price').forEach(btn => {
+                btn.addEventListener('click', () => handleShopAction(btn));
+            });
+        }
+
+        function handleShopAction(btn) {
+            const action = btn.dataset.action;
+            if (action === 'equipped' || action === 'owned') return;
+
+            if (action === 'equip') {
+                const cueIdx = parseInt(btn.dataset.cue);
+                if (ownedCues.includes(cueIdx)) {
+                    selectedCue = cueIdx;
+                    buildCueRack();
+                    renderShop();
+                    showToast(`Taco equipado!`);
+                }
+                return;
+            }
+
+            if (action === 'buy') {
+                const price = parseInt(btn.dataset.price);
+                const cueIdx = parseInt(btn.dataset.cue);
+                if (ownedCues.includes(cueIdx)) return;
+                if (playerCoins < price) {
+                    showToast('Moedas insuficientes!');
+                    return;
+                }
+                playerCoins -= price;
+                ownedCues.push(cueIdx);
+                selectedCue = cueIdx;
+                updateCoinDisplays();
+                buildCueRack();
+                renderShop();
+                showToast(`Taco comprado e equipado!`);
+                return;
+            }
+
+            if (action === 'buy-extra') {
+                const id = btn.dataset.id;
+                const price = parseInt(btn.dataset.price);
+                if (ownedExtras[id]) return;
+                if (playerCoins < price) {
+                    showToast('Moedas insuficientes!');
+                    return;
+                }
+                playerCoins -= price;
+                ownedExtras[id] = true;
+                updateCoinDisplays();
+                renderShop();
+                showToast(`Item comprado!`);
+                return;
+            }
+
+            if (action === 'add-coins') {
+                const amount = parseInt(btn.dataset.coins);
+                playerCoins += amount;
+                updateCoinDisplays();
+                renderShop();
+                showToast(`+${amount} moedas!`);
+            }
+        }
+
+        function openShop() {
+            updateCoinDisplays();
+            currentShopTab = 'cues';
+            document.querySelectorAll('.shop-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'cues'));
+            renderShop();
+            document.getElementById('shop-overlay').classList.add('show');
+        }
+
+        function closeShop() {
+            document.getElementById('shop-overlay').classList.remove('show');
+        }
+
+        document.getElementById('btn-shop').addEventListener('click', openShop);
+        document.getElementById('shop-close').addEventListener('click', closeShop);
+        document.getElementById('shop-overlay').addEventListener('click', e => {
+            if (e.target.id === 'shop-overlay') closeShop();
         });
+        document.querySelectorAll('.shop-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                currentShopTab = tab.dataset.tab;
+                document.querySelectorAll('.shop-tab').forEach(t => t.classList.toggle('active', t === tab));
+                renderShop();
+            });
+        });
+
+        // ===== GIRE E GANHE =====
+        const spinPrizes = [
+            { label: '50 🪙', coins: 50 },
+            { label: '100 🪙', coins: 100 },
+            { label: '20 🪙', coins: 20 },
+            { label: '200 🪙', coins: 200 },
+            { label: 'Tente de novo', coins: 0 },
+            { label: '75 🪙', coins: 75 },
+            { label: '30 🪙', coins: 30 },
+            { label: '150 🪙', coins: 150 }
+        ];
+        let isSpinning = false;
+        let freeSpinAvailable = true;
+        let currentRotation = 0;
+
+        function buildWheelLabels() {
+            const container = document.getElementById('wheel-labels');
+            if (!container) return;
+            container.innerHTML = '';
+            const seg = 360 / spinPrizes.length;
+            spinPrizes.forEach((p, i) => {
+                const el = document.createElement('div');
+                el.className = 'wheel-label';
+                const angle = i * seg + seg / 2;
+                el.style.transform = `rotate(${angle}deg) translateY(-112px)`;
+                el.style.left = '50%';
+                el.style.top = '50%';
+                el.style.marginLeft = '-36px';
+                el.style.width = '72px';
+                el.textContent = p.label;
+                container.appendChild(el);
+            });
+        }
+
+        function updateSpinUI() {
+            const coinEl = document.getElementById('spin-coin-count');
+            if (coinEl) coinEl.textContent = playerCoins;
+            const btn = document.getElementById('spin-btn');
+            const hint = document.getElementById('spin-hint');
+            if (!btn) return;
+            if (freeSpinAvailable) {
+                btn.textContent = 'Girar grátis!';
+                if (hint) hint.textContent = '1ª roleta é grátis · Depois: 100 🪙';
+            } else {
+                btn.textContent = 'Girar — 100 🪙';
+                if (hint) hint.textContent = 'Cada giro adicional custa 100 moedas';
+            }
+            btn.disabled = isSpinning || (!freeSpinAvailable && playerCoins < 100);
+        }
+
+        function openSpin() {
+            buildWheelLabels();
+            updateSpinUI();
+            const resultEl = document.getElementById('spin-result');
+            if (resultEl) {
+                resultEl.classList.remove('show');
+                resultEl.textContent = '';
+            }
+            document.getElementById('spin-overlay').classList.add('show');
+        }
+
+        function closeSpin() {
+            if (isSpinning) return;
+            document.getElementById('spin-overlay').classList.remove('show');
+        }
+
+        function doSpin() {
+            if (isSpinning) return;
+
+            if (!freeSpinAvailable) {
+                if (playerCoins < 100) {
+                    showToast('Moedas insuficientes! Precisa de 100 🪙');
+                    return;
+                }
+                playerCoins -= 100;
+                updateCoinDisplays();
+            } else {
+                freeSpinAvailable = false;
+            }
+
+            isSpinning = true;
+            updateSpinUI();
+            const resultEl = document.getElementById('spin-result');
+            if (resultEl) {
+                resultEl.classList.remove('show');
+                resultEl.textContent = '';
+            }
+
+            const prizeIndex = Math.floor(Math.random() * spinPrizes.length);
+            const seg = 360 / spinPrizes.length;
+            // ponteiro no topo; fatia i tem centro em i*seg + seg/2
+            // giramos no sentido horário: ângulo final para o centro da fatia ficar sob o ponteiro
+            const targetCenter = prizeIndex * seg + seg / 2;
+            const spins = 5 + Math.floor(Math.random() * 3);
+            const finalRotation = currentRotation + spins * 360 + (360 - targetCenter) - (currentRotation % 360);
+
+            const wheel = document.getElementById('spin-wheel');
+            wheel.style.transition = 'transform 4s cubic-bezier(0.15, 0.7, 0.15, 1)';
+            wheel.style.transform = `rotate(${finalRotation}deg)`;
+            currentRotation = finalRotation;
+
+            setTimeout(() => {
+                isSpinning = false;
+                const prize = spinPrizes[prizeIndex];
+                if (resultEl) {
+                    if (prize.coins > 0) {
+                        playerCoins += prize.coins;
+                        updateCoinDisplays();
+                        resultEl.textContent = `🎉 Você ganhou ${prize.coins} moedas!`;
+                        resultEl.style.color = '#fbbf24';
+                        showToast(`+${prize.coins} 🪙`);
+                    } else {
+                        resultEl.textContent = '😅 Tente de novo!';
+                        resultEl.style.color = '#a78bfa';
+                    }
+                    resultEl.classList.add('show');
+                }
+                updateSpinUI();
+            }, 4200);
+        }
+
+        document.getElementById('btn-spin').addEventListener('click', openSpin);
+        document.getElementById('spin-close').addEventListener('click', closeSpin);
+        document.getElementById('spin-close-btn').addEventListener('click', closeSpin);
+        document.getElementById('spin-overlay').addEventListener('click', e => {
+            if (e.target.id === 'spin-overlay') closeSpin();
+        });
+        document.getElementById('spin-btn').addEventListener('click', doSpin);
 
         // timer promocional decorativo
         let promoSeconds = 9 * 3600 + 3 * 60 + 4;
@@ -848,11 +2073,17 @@
             const rack = document.getElementById('cue-rack');
             rack.innerHTML = '';
             cues.forEach((cue, i) => {
+                const owned = (typeof ownedCues !== 'undefined') ? ownedCues.includes(i) : (i === 0);
                 const el = document.createElement('div');
                 el.className = 'rack-cue' + (i === selectedCue ? ' selected' : '');
                 el.style.background = `linear-gradient(180deg, ${cue.tip} 0%, ${cue.shaft} 12%, ${cue.shaft} 55%, ${cue.grip} 70%, ${cue.butt} 100%)`;
-                el.title = cue.name;
+                el.style.opacity = owned ? '1' : '0.35';
+                el.title = owned ? cue.name : cue.name + ' (bloqueado)';
                 el.onclick = () => {
+                    if (!owned) {
+                        if (typeof showToast === 'function') showToast('Compre este taco na Loja!');
+                        return;
+                    }
                     selectedCue = i;
                     document.querySelectorAll('.rack-cue').forEach((b, idx) => b.classList.toggle('selected', idx === i));
                 };
@@ -1692,22 +2923,79 @@
             );
 
             gameWon = true;
-            const isLoss = hasGroupBallsLeft;
+            const isLoss = hasGroupBallsLeft; // quem encaçapou a 8 perdeu se ainda tinha bolas do grupo
             const color = currentPlayer === 1 ? '#4fc3f7' : '#ffb74d';
             let name = vsCPU ? (currentPlayer === 1 ? 'VOCÊ' : 'CPU') : `JOGADOR ${currentPlayer}`;
 
-            winMessage.className = isLoss ? 'loss' : '';
+            // vitória do jogador humano (P1)
+            const humanWon = (currentPlayer === 1 && !isLoss) || (currentPlayer === 2 && isLoss);
+            const humanLost = (currentPlayer === 1 && isLoss) || (currentPlayer === 2 && !isLoss);
+
+            winMessage.className = (vsCPU ? humanLost : isLoss) ? 'loss' : '';
             winMessage.style.color = color;
-            winMessage.innerHTML = isLoss
-                ? `<div class="win-title">❌ ${name}</div>
-                   <div class="win-sub">Perdeu — bola 8 encaçapada cedo</div>
-                   <button class="play-again-btn" id="play-again-btn">Jogar de novo</button>`
-                : `<div class="win-title">🎉 ${name}</div>
-                   <div class="win-sub">Venceu a partida!</div>
-                   <button class="play-again-btn" id="play-again-btn">Jogar de novo</button>`;
+
+            // recompensa de moedas (partida normal)
+            let reward = 0;
+            if (!tournamentActive && !isLoss && (currentPlayer === 1 || !vsCPU)) {
+                reward = 40 + Math.floor(totalPoints / 5);
+                playerCoins += reward;
+                updateCoinDisplays();
+            }
+
+            // torneio — guarda rodada atual antes de atualizar
+            const tourRoundBefore = tournamentRound;
+            if (tournamentActive && vsCPU) {
+                onTournamentMatchEnd(humanWon);
+            }
+
+            let subMsg = '';
+            if (tournamentActive && vsCPU) {
+                if (humanWon) {
+                    const r = tournamentRounds[tourRoundBefore];
+                    if (tourRoundBefore >= 2) {
+                        subMsg = `🏆 Campeão do Torneio!<br><span style="color:#fbbf24;font-size:14px;">+${r.reward + 50} 🪙</span>`;
+                    } else {
+                        subMsg = `Vitória vs ${r.opponent}!<br><span style="color:#fbbf24;font-size:14px;">+${r.reward} 🪙 · Próxima fase</span>`;
+                    }
+                } else {
+                    subMsg = isLoss && currentPlayer === 1
+                        ? 'Eliminado — bola 8 cedo'
+                        : 'Eliminado do torneio';
+                }
+            } else if (isLoss) {
+                subMsg = 'Perdeu — bola 8 encaçapada cedo';
+            } else {
+                subMsg = 'Venceu a partida!' + (reward ? `<br><span style="color:#fbbf24;font-size:14px;">+${reward} 🪙</span>` : '');
+            }
+
+            const againLabel = tournamentActive && vsCPU && humanWon && tournamentRound < 3
+                ? 'Próxima rodada'
+                : tournamentActive && vsCPU
+                    ? 'Ver torneio'
+                    : 'Jogar de novo';
+
+            winMessage.innerHTML = (vsCPU ? humanLost : isLoss)
+                ? `<div class="win-title">❌ ${vsCPU && humanLost ? 'VOCÊ' : name}</div>
+                   <div class="win-sub">${subMsg}</div>
+                   <button class="play-again-btn" id="play-again-btn">${againLabel}</button>`
+                : `<div class="win-title">🎉 ${vsCPU && humanWon ? 'VOCÊ' : name}</div>
+                   <div class="win-sub">${subMsg}</div>
+                   <button class="play-again-btn" id="play-again-btn">${againLabel}</button>`;
             winMessage.style.display = 'block';
 
-            document.getElementById('play-again-btn').addEventListener('click', () => createBalls());
+            document.getElementById('play-again-btn').addEventListener('click', () => {
+                if (tournamentActive && vsCPU && humanWon && tournamentRound < 3) {
+                    createBalls();
+                    showToast(`Rodada ${tournamentRound + 1}: vs ${tournamentRounds[tournamentRound].opponent}`);
+                } else if (tournamentActive && vsCPU) {
+                    winMessage.style.display = 'none';
+                    gameContainer.classList.remove('visible');
+                    menuScreen.classList.remove('hidden');
+                    openTournament();
+                } else {
+                    createBalls();
+                }
+            });
         }
 
         function endShot() {
