@@ -448,6 +448,75 @@
         .btn-shop:hover {
             background: linear-gradient(180deg, #5cc8fa 0%, #0ea5e9 100%);
         }
+        .btn-rank {
+            background: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%);
+            color: #fff;
+            font-size: 15px;
+        }
+        .btn-rank:hover {
+            background: linear-gradient(180deg, #c4b5fd 0%, #8b5cf6 100%);
+        }
+
+        #rank-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.82);
+            display: none; align-items: center; justify-content: center;
+            z-index: 250; backdrop-filter: blur(6px);
+        }
+        #rank-overlay.show { display: flex; }
+        #rank-modal {
+            background: linear-gradient(165deg, #1a2230 0%, #0f1620 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px; width: 92%; max-width: 440px;
+            max-height: 85vh; overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.65);
+            animation: popIn 0.3s ease;
+            display: flex; flex-direction: column;
+        }
+        .rank-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px;
+            background: linear-gradient(180deg, #243044 0%, #1a2230 100%);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .rank-header h3 {
+            font-size: 17px; font-weight: 800; letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #a78bfa, #38bdf8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .rank-body { padding: 16px 18px 20px; overflow-y: auto; flex: 1; }
+        .rank-stats {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px;
+        }
+        .rank-stat {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px; padding: 12px 10px; text-align: center;
+        }
+        .rank-stat-val {
+            font-size: 22px; font-weight: 800; color: #fbbf24; margin-bottom: 2px;
+        }
+        .rank-stat-label { font-size: 11px; color: #94a3b8; font-weight: 600; letter-spacing: 0.4px; }
+        .rank-section-title {
+            font-size: 12px; color: #94a3b8; text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 10px; font-weight: 700;
+        }
+        .rank-history { display: flex; flex-direction: column; gap: 8px; }
+        .rank-match {
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 10px; padding: 10px 12px;
+        }
+        .rank-match.win { border-left: 3px solid #22c55e; }
+        .rank-match.loss { border-left: 3px solid #ef4444; }
+        .rank-match-info { font-size: 13px; color: #e2e8f0; font-weight: 600; }
+        .rank-match-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .rank-match-result {
+            font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 8px;
+        }
+        .rank-match-result.win { background: rgba(34,197,94,0.15); color: #4ade80; }
+        .rank-match-result.loss { background: rgba(239,68,68,0.15); color: #f87171; }
+        .rank-empty { text-align: center; color: #64748b; font-size: 13px; padding: 24px 0; }
 
         /* ===================== LOJA ===================== */
         #shop-overlay {
@@ -1585,6 +1654,7 @@
             <button class="menu-btn btn-online" id="btn-online">🌐  Online 1 vs 1</button>
             <button class="menu-btn btn-secondary" id="btn-tournaments">🏆  Torneios</button>
             <button class="menu-btn btn-shop" id="btn-shop">🎱  Loja da Sinuca</button>
+            <button class="menu-btn btn-rank" id="btn-rank">📊  Ranking</button>
         </div>
     </div>
 
@@ -1702,6 +1772,8 @@
             </div>
             <div class="shop-tabs">
                 <button class="shop-tab active" data-tab="cues">Tacos</button>
+                <button class="shop-tab" data-tab="tables">Mesas</button>
+                <button class="shop-tab" data-tab="effects">Efeitos</button>
                 <button class="shop-tab" data-tab="extras">Extras</button>
                 <button class="shop-tab" data-tab="coins">Moedas</button>
             </div>
@@ -1711,6 +1783,21 @@
         </div>
     </div>
     <div class="shop-toast" id="shop-toast"></div>
+
+    <!-- RANKING / HISTÓRICO -->
+    <div id="rank-overlay">
+        <div id="rank-modal">
+            <div class="rank-header">
+                <h3>📊 Ranking & Histórico</h3>
+                <button class="shop-close" id="rank-close">✕</button>
+            </div>
+            <div class="rank-body">
+                <div class="rank-stats" id="rank-stats"></div>
+                <h4 class="rank-section-title">Partidas recentes</h4>
+                <div class="rank-history" id="rank-history"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- GIRE E GANHE -->
     <div id="spin-overlay">
@@ -1767,6 +1854,9 @@
         let selectedCue = 0;
         let freeSpinAvailable = true;
         let playerId = '';
+        let equippedFelt = 'green';
+        let equippedEffect = 'none';
+        let playerStats = { wins: 0, losses: 0, streak: 0, bestStreak: 0, history: [] };
 
         function profileKey(name) {
             return 'sinuca_profile_' + (name || 'guest').toLowerCase().trim();
@@ -1783,11 +1873,14 @@
             return {
                 coins: 550,
                 ownedCues: [0],
-                ownedExtras: {},
+                ownedExtras: { felt_green: true },
                 selectedCue: 0,
+                equippedFelt: 'green',
+                equippedEffect: 'none',
                 dailyTs: 0,
                 freeSpin: true,
-                playerId: genPlayerId()
+                playerId: genPlayerId(),
+                stats: { wins: 0, losses: 0, streak: 0, bestStreak: 0, history: [] }
             };
         }
 
@@ -1797,17 +1890,29 @@
                 const raw = localStorage.getItem(profileKey(name));
                 if (!raw) return def;
                 const data = JSON.parse(raw);
+                const stats = (data.stats && typeof data.stats === 'object') ? data.stats : def.stats;
                 return {
                     coins: Math.max(0, parseInt(data.coins, 10) || def.coins),
                     ownedCues: Array.isArray(data.ownedCues) && data.ownedCues.length
                         ? data.ownedCues.map(Number).filter(n => n >= 0 && n <= 5)
                         : [0],
-                    ownedExtras: (data.ownedExtras && typeof data.ownedExtras === 'object') ? data.ownedExtras : {},
+                    ownedExtras: (data.ownedExtras && typeof data.ownedExtras === 'object')
+                        ? { felt_green: true, ...data.ownedExtras }
+                        : { felt_green: true },
                     selectedCue: (typeof data.selectedCue === 'number' && data.ownedCues && data.ownedCues.includes(data.selectedCue))
                         ? data.selectedCue : 0,
+                    equippedFelt: data.equippedFelt || 'green',
+                    equippedEffect: data.equippedEffect || 'none',
                     dailyTs: parseInt(data.dailyTs, 10) || 0,
                     freeSpin: data.freeSpin !== false,
-                    playerId: (data.playerId && String(data.playerId).length >= 4) ? String(data.playerId).toUpperCase() : def.playerId
+                    playerId: (data.playerId && String(data.playerId).length >= 4) ? String(data.playerId).toUpperCase() : def.playerId,
+                    stats: {
+                        wins: Math.max(0, parseInt(stats.wins, 10) || 0),
+                        losses: Math.max(0, parseInt(stats.losses, 10) || 0),
+                        streak: Math.max(0, parseInt(stats.streak, 10) || 0),
+                        bestStreak: Math.max(0, parseInt(stats.bestStreak, 10) || 0),
+                        history: Array.isArray(stats.history) ? stats.history.slice(0, 30) : []
+                    }
                 };
             } catch (e) {
                 return def;
@@ -1821,9 +1926,12 @@
                     ownedCues: ownedCues,
                     ownedExtras: ownedExtras,
                     selectedCue: selectedCue,
+                    equippedFelt: equippedFelt,
+                    equippedEffect: equippedEffect,
                     dailyTs: typeof getLastClaimTime === 'function' ? getLastClaimTime() : 0,
                     freeSpin: freeSpinAvailable,
-                    playerId: playerId
+                    playerId: playerId,
+                    stats: playerStats
                 };
                 localStorage.setItem(profileKey(playerName), JSON.stringify(data));
                 localStorage.setItem('sinuca_player', playerName);
@@ -1833,10 +1941,13 @@
         function applyProfile(data) {
             playerCoins = data.coins;
             ownedCues = data.ownedCues.includes(0) ? data.ownedCues : [0, ...data.ownedCues];
-            ownedExtras = data.ownedExtras || {};
+            ownedExtras = { felt_green: true, ...(data.ownedExtras || {}) };
             selectedCue = ownedCues.includes(data.selectedCue) ? data.selectedCue : 0;
+            equippedFelt = data.equippedFelt || 'green';
+            equippedEffect = data.equippedEffect || 'none';
             freeSpinAvailable = data.freeSpin !== false;
             playerId = data.playerId || genPlayerId();
+            playerStats = data.stats || { wins: 0, losses: 0, streak: 0, bestStreak: 0, history: [] };
             try {
                 if (data.dailyTs) localStorage.setItem('sinuca_daily_ts', String(data.dailyTs));
             } catch (e) {}
@@ -2655,6 +2766,15 @@
         updateDailyButton();
         let currentShopTab = 'cues';
 
+        const feltThemes = {
+            green:  { name: 'Verde Clássico', colors: ['#0e6b2e', '#0a5a24', '#074018'], emoji: '🟢' },
+            red:    { name: 'Vermelho',       colors: ['#b91c1c', '#991b1b', '#7f1d1d'], emoji: '🔴' },
+            blue:   { name: 'Azul Oceano',    colors: ['#1d4ed8', '#1e40af', '#1e3a8a'], emoji: '🔵' },
+            purple: { name: 'Roxo Real',      colors: ['#7e22ce', '#6b21a8', '#581c87'], emoji: '🟣' },
+            black:  { name: 'Preto Noite',    colors: ['#374151', '#1f2937', '#111827'], emoji: '⚫' },
+            gold:   { name: 'Dourado',        colors: ['#ca8a04', '#a16207', '#854d0e'], emoji: '🟡' }
+        };
+
         const shopItems = {
             cues: [
                 { id: 0, name: 'Clássico', desc: 'Taco padrão', price: 0, cueIndex: 0, free: true },
@@ -2664,11 +2784,25 @@
                 { id: 4, name: 'Roxo', desc: 'Potência +3%', price: 150, cueIndex: 4 },
                 { id: 5, name: 'Dourado', desc: 'Potência +12%', price: 350, cueIndex: 5, badge: 'new' }
             ],
+            tables: [
+                { id: 'felt_green',  felt: 'green',  name: 'Verde Clássico', desc: 'Feltro padrão', price: 0, free: true },
+                { id: 'felt_red',    felt: 'red',    name: 'Vermelho', desc: 'Feltro vermelho vivo', price: 200 },
+                { id: 'felt_blue',   felt: 'blue',   name: 'Azul Oceano', desc: 'Feltro azul profundo', price: 220 },
+                { id: 'felt_purple', felt: 'purple', name: 'Roxo Real', desc: 'Feltro roxo elegante', price: 250 },
+                { id: 'felt_black',  felt: 'black',  name: 'Preto Noite', desc: 'Feltro escuro moderno', price: 280 },
+                { id: 'felt_gold',   felt: 'gold',   name: 'Dourado', desc: 'Feltro dourado premium', price: 400, badge: 'new' }
+            ],
+            effects: [
+                { id: 'fx_none',   effect: 'none',   name: 'Sem efeito', desc: 'Visual padrão', price: 0, free: true },
+                { id: 'fx_trail',  effect: 'trail',  name: 'Rastro de Luz', desc: 'Bola branca deixa rastro', price: 180 },
+                { id: 'fx_spark',  effect: 'spark',  name: 'Faíscas', desc: 'Faíscas ao encaçapar', price: 220 },
+                { id: 'fx_glow',   effect: 'glow',   name: 'Brilho Neon', desc: 'Bolas com brilho suave', price: 260 },
+                { id: 'fx_confetti', effect: 'confetti', name: 'Confete', desc: 'Confete na vitória', price: 300, badge: 'new' }
+            ],
             extras: [
                 { id: 'hint', name: 'Dica de Mira', desc: 'Linha de mira mais longa por 3 partidas', price: 80, type: 'consumable' },
                 { id: 'rerack', name: 'Re-rack', desc: 'Reposiciona as bolas uma vez', price: 50, type: 'consumable' },
-                { id: 'lucky', name: 'Bola da Sorte', desc: 'Chance de ponto extra ao encaçapar', price: 200, type: 'boost' },
-                { id: 'table', name: 'Feltro Azul', desc: 'Muda a cor da mesa (cosmético)', price: 250, type: 'cosmetic' }
+                { id: 'lucky', name: 'Bola da Sorte', desc: 'Chance de ponto extra ao encaçapar', price: 200, type: 'boost' }
             ],
             coins: [
                 { id: 'pack1', name: 'Pacote Pequeno', desc: '+150 moedas', price: 0, coins: 150, real: false },
@@ -2707,7 +2841,6 @@
                     const equipped = selectedCue === item.cueIndex;
                     if (owned) el.classList.add('owned');
                     if (equipped) el.classList.add('equipped');
-
                     const cue = cues[item.cueIndex];
                     el.innerHTML = `
                         ${item.badge ? `<span class="shop-badge new">NOVO</span>` : (owned ? `<span class="shop-badge owned">✓</span>` : '')}
@@ -2720,12 +2853,42 @@
                             ${equipped ? '✓ Equipado' : owned ? 'Equipar' : (item.free ? 'Grátis' : `🪙 ${item.price}`)}
                         </button>
                     `;
+                } else if (currentShopTab === 'tables') {
+                    const owned = !!ownedExtras[item.id] || item.free;
+                    const equipped = equippedFelt === item.felt;
+                    if (owned) el.classList.add('owned');
+                    if (equipped) el.classList.add('equipped');
+                    const theme = feltThemes[item.felt];
+                    el.innerHTML = `
+                        ${item.badge ? `<span class="shop-badge new">NOVO</span>` : (equipped ? `<span class="shop-badge owned">✓</span>` : '')}
+                        <div class="shop-item-preview" style="height:36px;width:80%;margin:10px auto;border-radius:8px;background:linear-gradient(135deg,${theme.colors[0]},${theme.colors[2]});border:2px solid rgba(255,255,255,0.15);"></div>
+                        <div class="shop-item-name">${theme.emoji} ${item.name}</div>
+                        <div class="shop-item-desc">${item.desc}</div>
+                        <button class="shop-item-price ${equipped ? 'equipped-btn' : owned ? 'equip-btn' : ''}" data-action="${equipped ? 'equipped' : owned ? 'equip-felt' : 'buy-felt'}" data-id="${item.id}" data-felt="${item.felt}" data-price="${item.price}">
+                            ${equipped ? '✓ Equipado' : owned ? 'Equipar' : (item.free ? 'Grátis' : `🪙 ${item.price}`)}
+                        </button>
+                    `;
+                } else if (currentShopTab === 'effects') {
+                    const owned = !!ownedExtras[item.id] || item.free;
+                    const equipped = equippedEffect === item.effect;
+                    if (owned) el.classList.add('owned');
+                    if (equipped) el.classList.add('equipped');
+                    const icons = { none: '⬜', trail: '✨', spark: '⚡', glow: '💫', confetti: '🎊' };
+                    el.innerHTML = `
+                        ${item.badge ? `<span class="shop-badge new">NOVO</span>` : (equipped ? `<span class="shop-badge owned">✓</span>` : '')}
+                        <div class="shop-item-preview" style="font-size:28px;">${icons[item.effect] || '✨'}</div>
+                        <div class="shop-item-name">${item.name}</div>
+                        <div class="shop-item-desc">${item.desc}</div>
+                        <button class="shop-item-price ${equipped ? 'equipped-btn' : owned ? 'equip-btn' : ''}" data-action="${equipped ? 'equipped' : owned ? 'equip-effect' : 'buy-effect'}" data-id="${item.id}" data-effect="${item.effect}" data-price="${item.price}">
+                            ${equipped ? '✓ Equipado' : owned ? 'Equipar' : (item.free ? 'Grátis' : `🪙 ${item.price}`)}
+                        </button>
+                    `;
                 } else if (currentShopTab === 'extras') {
                     const owned = !!ownedExtras[item.id];
                     if (owned) el.classList.add('owned');
                     el.innerHTML = `
                         ${owned ? `<span class="shop-badge owned">✓</span>` : ''}
-                        <div class="shop-item-preview" style="font-size:28px;">${item.id === 'hint' ? '🎯' : item.id === 'rerack' ? '🔄' : item.id === 'lucky' ? '🍀' : '🟦'}</div>
+                        <div class="shop-item-preview" style="font-size:28px;">${item.id === 'hint' ? '🎯' : item.id === 'rerack' ? '🔄' : '🍀'}</div>
                         <div class="shop-item-name">${item.name}</div>
                         <div class="shop-item-desc">${item.desc}</div>
                         <button class="shop-item-price ${owned ? 'owned-btn' : ''}" data-action="${owned ? 'owned' : 'buy-extra'}" data-id="${item.id}" data-price="${item.price}">
@@ -2745,7 +2908,6 @@
                 grid.appendChild(el);
             });
 
-            // bind buttons
             grid.querySelectorAll('.shop-item-price').forEach(btn => {
                 btn.addEventListener('click', () => handleShopAction(btn));
             });
@@ -2801,6 +2963,66 @@
                 return;
             }
 
+            if (action === 'equip-felt') {
+                const felt = btn.dataset.felt;
+                const id = btn.dataset.id;
+                if (!ownedExtras[id] && id !== 'felt_green') return;
+                equippedFelt = felt;
+                saveProfile();
+                renderShop();
+                showToast('Mesa equipada!');
+                return;
+            }
+
+            if (action === 'buy-felt') {
+                const id = btn.dataset.id;
+                const felt = btn.dataset.felt;
+                const price = parseInt(btn.dataset.price);
+                if (ownedExtras[id]) return;
+                if (playerCoins < price) {
+                    showToast('Moedas insuficientes!');
+                    return;
+                }
+                playerCoins -= price;
+                ownedExtras[id] = true;
+                equippedFelt = felt;
+                updateCoinDisplays();
+                saveProfile();
+                renderShop();
+                showToast('Mesa comprada e equipada!');
+                return;
+            }
+
+            if (action === 'equip-effect') {
+                const effect = btn.dataset.effect;
+                const id = btn.dataset.id;
+                if (!ownedExtras[id] && id !== 'fx_none') return;
+                equippedEffect = effect;
+                saveProfile();
+                renderShop();
+                showToast('Efeito equipado!');
+                return;
+            }
+
+            if (action === 'buy-effect') {
+                const id = btn.dataset.id;
+                const effect = btn.dataset.effect;
+                const price = parseInt(btn.dataset.price);
+                if (ownedExtras[id]) return;
+                if (playerCoins < price) {
+                    showToast('Moedas insuficientes!');
+                    return;
+                }
+                playerCoins -= price;
+                ownedExtras[id] = true;
+                equippedEffect = effect;
+                updateCoinDisplays();
+                saveProfile();
+                renderShop();
+                showToast('Efeito comprado e equipado!');
+                return;
+            }
+
             if (action === 'add-coins') {
                 const amount = parseInt(btn.dataset.coins);
                 playerCoins += amount;
@@ -2823,6 +3045,67 @@
         }
 
         document.getElementById('btn-shop').addEventListener('click', openShop);
+        document.getElementById('btn-rank').addEventListener('click', openRank);
+        document.getElementById('rank-close').addEventListener('click', closeRank);
+        document.getElementById('rank-overlay').addEventListener('click', e => {
+            if (e.target.id === 'rank-overlay') closeRank();
+        });
+
+        function recordMatchResult(won, mode, reward) {
+            if (won) {
+                playerStats.wins++;
+                playerStats.streak++;
+                if (playerStats.streak > playerStats.bestStreak) {
+                    playerStats.bestStreak = playerStats.streak;
+                }
+            } else {
+                playerStats.losses++;
+                playerStats.streak = 0;
+            }
+            playerStats.history.unshift({
+                won: !!won,
+                mode: mode || 'Partida',
+                reward: reward || 0,
+                date: Date.now()
+            });
+            if (playerStats.history.length > 30) playerStats.history.length = 30;
+            saveProfile();
+        }
+
+        function openRank() {
+            const statsEl = document.getElementById('rank-stats');
+            const histEl = document.getElementById('rank-history');
+            const total = playerStats.wins + playerStats.losses;
+            const rate = total ? Math.round((playerStats.wins / total) * 100) : 0;
+            statsEl.innerHTML = `
+                <div class="rank-stat"><div class="rank-stat-val">${playerStats.wins}</div><div class="rank-stat-label">Vitórias</div></div>
+                <div class="rank-stat"><div class="rank-stat-val">${playerStats.losses}</div><div class="rank-stat-label">Derrotas</div></div>
+                <div class="rank-stat"><div class="rank-stat-val">${rate}%</div><div class="rank-stat-label">Taxa de vitória</div></div>
+                <div class="rank-stat"><div class="rank-stat-val">${playerStats.bestStreak}</div><div class="rank-stat-label">Melhor sequência</div></div>
+            `;
+            if (!playerStats.history.length) {
+                histEl.innerHTML = '<div class="rank-empty">Nenhuma partida ainda.<br>Jogue para registrar o histórico!</div>';
+            } else {
+                histEl.innerHTML = playerStats.history.map(m => {
+                    const d = new Date(m.date);
+                    const when = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' +
+                        d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    const cls = m.won ? 'win' : 'loss';
+                    return `<div class="rank-match ${cls}">
+                        <div>
+                            <div class="rank-match-info">${m.mode || 'Partida'}</div>
+                            <div class="rank-match-sub">${when}${m.reward ? ' · +' + m.reward + ' 🪙' : ''}</div>
+                        </div>
+                        <span class="rank-match-result ${cls}">${m.won ? 'VITÓRIA' : 'DERROTA'}</span>
+                    </div>`;
+                }).join('');
+            }
+            document.getElementById('rank-overlay').classList.add('show');
+        }
+
+        function closeRank() {
+            document.getElementById('rank-overlay').classList.remove('show');
+        }
         document.getElementById('shop-close').addEventListener('click', closeShop);
         document.getElementById('shop-overlay').addEventListener('click', e => {
             if (e.target.id === 'shop-overlay') closeShop();
@@ -3076,6 +3359,26 @@
             draw() {
                 if (this.sunk) return;
                 const speed = Math.hypot(this.vx, this.vy);
+
+                // efeito: rastro na branca
+                if (this.number === 0 && equippedEffect === 'trail' && speed > 0.5) {
+                    ctx.beginPath();
+                    ctx.arc(this.x - this.vx * 1.2, this.y - this.vy * 1.2, this.radius * 0.7, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(this.x - this.vx * 2.4, this.y - this.vy * 2.4, this.radius * 0.45, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                    ctx.fill();
+                }
+
+                // efeito: brilho neon
+                if (equippedEffect === 'glow') {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI * 2);
+                    ctx.fillStyle = this.number === 0 ? 'rgba(200,230,255,0.15)' : 'rgba(255,220,100,0.12)';
+                    ctx.fill();
+                }
 
                 ctx.beginPath();
                 ctx.ellipse(this.x + 2.5, this.y + this.radius * 0.65, this.radius * 0.82, this.radius * 0.28, 0, 0, Math.PI * 2);
@@ -3443,10 +3746,11 @@
         }
 
         function drawTable() {
+            const theme = feltThemes[equippedFelt] || feltThemes.green;
             const feltGrad = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, 520);
-            feltGrad.addColorStop(0, '#0e6b2e');
-            feltGrad.addColorStop(0.55, '#0a5a24');
-            feltGrad.addColorStop(1, '#074018');
+            feltGrad.addColorStop(0, theme.colors[0]);
+            feltGrad.addColorStop(0.55, theme.colors[1]);
+            feltGrad.addColorStop(1, theme.colors[2]);
             ctx.fillStyle = feltGrad;
             ctx.fillRect(BORDER, BORDER, W - BORDER*2, H - BORDER*2);
 
@@ -3578,6 +3882,18 @@
                     if (Math.hypot(ball.x - p.x, ball.y - p.y) < POCKET_RADIUS + BALL_RADIUS - 5) {
                         ball.sunk = true;
                         ball.vx = ball.vy = 0;
+
+                        if (equippedEffect === 'spark' && ball.number !== 0) {
+                            // faíscas rápidas na caçapa
+                            for (let i = 0; i < 6; i++) {
+                                const a = Math.random() * Math.PI * 2;
+                                const r = 8 + Math.random() * 14;
+                                ctx.beginPath();
+                                ctx.arc(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r, 2, 0, Math.PI * 2);
+                                ctx.fillStyle = `rgba(255,${180 + Math.random()*70|0},50,0.9)`;
+                                ctx.fill();
+                            }
+                        }
 
                         if (ball.number === 0) {
                             shotCueSunk = true;
@@ -3882,6 +4198,16 @@
                 reward = 40 + Math.floor(totalPoints / 5);
                 playerCoins += reward;
                 updateCoinDisplays();
+            }
+
+            // ranking / histórico (partida normal ou vs CPU)
+            if (!onlineMode) {
+                recordMatchResult(humanWon, vsCPU ? 'vs CPU' : '2 Jogadores', reward);
+            }
+
+            // confete na vitória (efeito)
+            if (humanWon && equippedEffect === 'confetti') {
+                showToast('🎊 Vitória!');
             }
 
             // torneio — guarda rodada atual antes de atualizar
